@@ -1,0 +1,125 @@
+{strip}
+
+
+
+
+<div class="container">
+    <div class="lk-wraper">
+
+        <div class="user-info margin-bottom-60">
+
+            <div class="user-info__avatar"><img src="{$mod_dir}/no_avatar.png" alt="user-lk" style="max-width: 200px; max-height: 200px;"></div>
+
+            {if $show_recovery_pass === true }
+
+            <br clear="all" />
+
+            <div style="width: 350px; display: inline-block;">
+
+                <h3>Установка нового пароля</h3>
+
+                {if $warn_form|count_characters:true > 0}
+                <div style="background-color:yellow; border-radius:15px;padding:20px;margin:5px;" >
+                    {$warn_form}
+                </div>
+                {/if}
+
+                {if $hide_form === true }
+                <br/>
+                <br/>
+                <a href="#" class="btn"
+                   data-toggle="modal" data-target="#modal-2" 
+                   onclick="
+                       $form2 = 'enter';
+                       $('#modal-1Label').show();
+                       $('#modal-2Label').hide();
+                       $('#enter_enter').show();
+                       $('#enter_reg').hide();
+                       $('#but_enter').show();
+                       $('#but_reg').hide();
+                       /* $('#but_reg_nodata').hide();*/
+                       $('#personalii').hide();
+                       $('.lk_form').attr('id', 'enter_form');
+
+                       $('#type_form').val('enter_form');
+
+                   "
+
+                   >Вход</a>
+                {/if}
+
+                <form action="" method=post {if $hide_form === true }style="display:none"{/if} >
+
+                      <label>
+                        Новый пароль
+                        <br/>
+                        <input type="password" style="color:black" name="renew_pass1" value="" class="form-control" />
+                    </label>
+
+                    <br/>
+                    <br/>
+
+                    <label>
+                        Подтверждение
+                        <br/>
+                        <input type="password" style="color:black" name="renew_pass2" value="" class="form-control" />
+                    </label>
+
+                    <br/>
+                    <br/>
+
+                    {literal}
+                    <style>
+                        .button2{ 
+                            border: none;
+                            background-color: #0065b1;
+                            border-radius: 25px;
+                            color: #ffffff;
+                            -webkit-transition: all 0.2s ease;
+                            transition: all 0.2s ease;
+                            min-width: 110px;
+                            padding: 9px 15px;
+                        }
+                    </style>
+                    {/literal}
+
+                    <button type="submit" name="repass" value="ok" class="button2" >Сохранить новый пароль</button>
+
+                </form>
+            </div>
+
+            {else}
+
+            <br/>
+            <br/>
+            <a href="#" class="btn button_start_reg"
+                data-toggle="modal" data-target="#modal-reg" 
+                >Регистрация</a>
+            <br/>
+            <br/>
+            <a href="#" class="btn button_start_enter"
+                data-toggle="modal" data-target="#modal-enter"
+               >Вход</a>
+            <br/>
+            <br/>
+            <a href="" style="color:blue" onclick="$('#form_recovery').toggle('slow'); return false;">восстановить пароль</a>
+            <Br/>
+            <Br/>
+            <div id="form_recovery" style="display:none">
+                <div style="width: 350px; display: inline-block;">
+                    <form action="/{$level}/" class="serch-form" method=post style="border-width: 2px;">
+                        <input type="email" style="color:black" name="remail" placeholder="Укажите E-mail" value="" />
+                        <button type="submit" name="repass" value="ok" class="submit">Восстановить</button>
+                    </form>
+                </div>
+            </div>
+
+            {/if}
+
+
+        </div>
+    </div>
+</div>
+
+
+{/strip}

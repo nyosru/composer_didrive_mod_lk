@@ -1,0 +1,34 @@
+{strip}
+<link rel="stylesheet" href="/0.site/exe/{$now_mod.type}/{$now_mod.version}/didrive/t/css.css" type="text/css" media="all" />
+<div class="container">
+<div class="grid">
+    <div class="row">
+        <div class="col-md-2">
+            <div class="mod_mnu" >
+
+                {foreach $mnum as $k22 => $v22 }
+                <A href="?level={$smarty.request.level}&option={$k22}" {if $k22 == $now_option }class="active"{/if} >{$v22.name}</a>
+                {/foreach}
+
+                {*
+                <A href="" >Каталоги</a>
+                <A href="" >Товары</a>
+                <A href="" >Клиенты</a>
+                <A href="" >Заявки</a>
+                *}
+
+            </div>
+
+        </div>
+        <div class="col-md-10">
+            
+    {include file="$body2tpl" }
+    
+        </div>
+    
+    </div>
+    
+</div>
+</div>
+
+{/strip}
