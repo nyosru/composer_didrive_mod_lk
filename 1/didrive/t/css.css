@@ -1,0 +1,11 @@
+.mod_mnu a,
+.mod_mnu a:VISITED{
+	display: block;
+	padding: 3px 3px 3px 10px;
+	margin-bottom: 1px;
+	background-color: #eef7ff;
+	}
+
+.mod_mnu a.active{
+	background-color: #d2e9ff;
+	}

@@ -1,0 +1,42 @@
+{strip}
+
+
+    {$list_user = Nyos\mod\lk::getUsers($db,$folder)}
+    {*f\pa($list_user)*}
+
+    <table class="table-hover" >
+        <thead>
+
+            <tr>
+                <th>дата<br/>регистрации</td>
+                <th>тип авторизации</td>
+                <th>логин</td>
+                <th>фио</td>
+                <th>майл</td>
+                <th>тел</td>
+                <th>действия</td>
+            </tr>
+
+        </thead>
+        <tbody>
+            {foreach $list_user as $id => $data }
+                <tr>
+                    <td>{$data.dt}</td>
+                    <td><a href="{$data.soc_web_link}" target="_blank" >{$data.soc_web}</a></td>
+                    <td>{$data.login}</td>
+                    <td>{$data.name} {$data.family}</td>
+                    <td>{$data.mail}</td>
+                    <td>{$data.phone}</td>
+                    <td>
+                        <select name="" action="/0.didrive/ajax.php" class="save_edit_select" rev="{$id}" table="gm_user" pole="access">
+                            <option value="">-</option>
+                            <option {if isset($data.access) && $data.access == 'admin' }selected{/if} value="admin" s='{Nyos\nyos::creatSecret( "gm_user-access-`$data.id`admin")}' >Администратор</option>
+                            <option  {if isset($data.access) && $data.access == 'moder' }selected{/if}  value="moder" s='{Nyos\nyos::creatSecret( "gm_user-access-`$data.id`moder")}' >Менеджер</option>
+                        </select>
+                    </td>
+                </tr>
+            {/foreach}
+        </tbody>
+    </table>
+
+{/strip}

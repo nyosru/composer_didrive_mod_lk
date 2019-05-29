@@ -1,0 +1,71 @@
+{strip}
+
+{$user = Nyos\peticii::getUserFull($db, $folder, null, $smarty.REQUEST.ext1)}
+
+{*f\pa($user)*}
+
+<div class="container">
+    <div class="row">
+        <div class="col-xs-12 col-sm-6 col-md-6 col-lg-4 col-lg-offset-2 text-center">
+            {if $user.avatar|count_characters:true > 3 }
+            <div class="user-info__avatar"><img 
+                    {* src="{$sd}avatars/{$user.avatar}" *}
+                    src="/didra-nyos/q-150/avatars/{$user.avatar}" 
+                    alt="user-lk" style="max-width: 200px; max-height: 200px;">
+            </div>
+            {else}
+            <div class="user-info__avatar"><img 
+                    src="{$mod_dir}/no_avatar.png" alt="user-lk"
+                    style="max-width: 200px; max-height: 200px;">
+            </div>
+            {/if}
+        </div>
+        <div class="col-xs-12 col-sm-6 col-md-6 col-lg-6">
+
+            <style>
+                .td1{
+                    width:5%;
+                    text-align:right
+                }
+            </style>
+
+            <table class="table table-striped">
+                <tr>
+                    <th colspan="2" style="font-weight: bold;">
+                         {$user.family} {$user.name} {$user.soname}
+                    </th>
+                </tr>
+                
+                {$citys = Nyos\peticii::getCity($db)}
+                
+                
+                <tr><td class="td1" >Город:</td><td>
+                    {if $user.city|count_characters:true > 0 && $citys[$user.city]['city']|count_characters:true > 0 }
+                    {$citys[$user.city]['city']}
+                    {else}
+                    {$city0 = Nyos\peticii::getCity($db,'default')}
+                    {$city0.city}
+                    {/if}
+                </td></tr>
+                
+                {if $user.dt > 0 }
+                <tr>
+                    <td class="td1" >Дата&nbsp;регистрации:</td><td>{date('d.m.Y',strtotime($user.dt))}</td>
+                </tr>
+                {/if}
+                <tr>
+                    <td class="td1" >Рейтинг:</td><td>{if $user.points > 0}{$user.points}{else}0{/if}</td>
+                </tr>
+                <tr>
+                    <td class="td1" >Создано&nbsp;инициатив:</td><td>{Nyos\peticii::getUserPeticii($db, $folder, $user.id)}</td>
+                </tr>
+            </table>
+
+        </div>
+    </div>
+</div>
+
+<br/>
+<br/>
+
+{/strip}

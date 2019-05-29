@@ -1,0 +1,11 @@
+    {$list_user = Nyos\module\Lk::getUsers($db,$folder)}
+
+    {if isset($smarty.get.access) && $smarty.get.access == 'show_dop' && isset($smarty.get.user) && is_numeric($smarty.get.user) && isset($list_user[$smarty.get.user]) }
+        
+        {include file='./body.verific.one.htm' }
+        
+    {else}
+
+        {include file='./body.verific.list.htm' }
+
+    {/if}
