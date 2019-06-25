@@ -7,16 +7,18 @@ namespace Nyos\Mod;
 // use Nyos\nyos as nyos2;
 //echo __FILE__.'<br/>';
 // строки безопасности
+
 if (!defined('IN_NYOS_PROJECT'))
     die('<center><h1><br><br><br><br>Cтудия Сергея</h1><p>Сработала защита <b>TPL</b> от злостных розовых хакеров.</p>
     <a href="http://www.uralweb.info" target="_blank">Создание, дизайн, вёрстка и программирование сайтов.</a><br />
     <a href="http://www.nyos.ru" target="_blank">Только отдельные услуги: Дизайн, вёрстка и программирование сайтов.</a>');
 
-require_once $_SERVER['DOCUMENT_ROOT'] . DS . 'include' . DS . 'f' . DS . 'ajax.php';
+// require_once $_SERVER['DOCUMENT_ROOT'] . DS . 'include' . DS . 'f' . DS . 'ajax.php';
 
 class Lk {
 
     public static $type = 'now_user';
+    
     // и для дидрайва
     // public static $type = 'now_user_di';
     public static $user_di_access = array();
@@ -36,6 +38,55 @@ class Lk {
         )
     );
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    public static function getDidriveUsersAccess($db, string $folder, $access_id = null) {
+
+        if (isset(self::$user_di_access[$folder])) {
+            if (isset($access_id{0}) && $access_id !== null && isset(self::$user_di_access[$folder][$access_id])) {
+                return self::$user_di_access[$folder][$access_id];
+            } else {
+                return self::$user_di_access[$folder];
+            }
+        }
+
+        $res = \f\db\getSql($db, 'SELECT 
+                u.id user
+                ,m.module
+                ,m.status
+                ,m.mode
+            FROM gm_user_di_mod m
+                INNER JOIN gm_user u ON u.folder = \'' . addslashes($folder) . '_di\' AND u.id = m.user_id
+            WHERE 
+                m.folder = \'' . addslashes($folder) . '\'
+
+            ; ', null);
+        //f\pa($res);
+        $res2 = array();
+
+        foreach ($res as $k => $v) {
+            $res2[$v['user']][$v['mode']][$v['module']] = $v['status'];
+        }
+
+        self::$user_di_access[$folder] = $res2;
+
+        // return array( 'st' => $status, 'data' => $res, 'dataw' => $res2 );
+
+        if (isset($access_id{0}) && $access_id !== null && isset($res2[$access_id])) {
+            return $res2[$access_id];
+        } else {
+            return $res2;
+        }
+    }
+    
+    
     /**
      * получение списка пользователей
      * @global type $status
@@ -50,29 +101,34 @@ class Lk {
     public static function getUsers($db, string $folder = null, string $type = null, string $status = null) {
 
         $where = '';
+        $sf = [];
 
         if ($folder == 'di') {
             $where .= ' `folder` LIKE \'%_di\' ';
         } elseif (isset($folder{1})) {
-            $where .= ' `folder` = \'' . addslashes($folder) . '\' ';
+            $where .= ' `folder` = :folder ';
+            $sf[':folder'] = $folder;
         }
 
         if ($type == 'moder') {
-            $where .= ( isset($where{1}) ? ' AND ' : '' ) . ' `access` = \'moder\' ';
+            $where .= ( isset($where{1}) ? ' AND ' : '' ) . ' `access` = :access ';
+            $sf[':access'] = 'moder';
         } elseif ($type == 'admin') {
-            $where .= ( isset($where{1}) ? ' AND ' : '' ) . ' `access` = \'admin\' ';
+            $where .= ( isset($where{1}) ? ' AND ' : '' ) . ' `access` = :access ';
+            $sf[':access'] = 'admin';
         }
 
-        
-        try{
-            
-        $ff = $db->prepare('SELECT * FROM `gm_user` '
-                . ( isset($where{1}) ? ' WHERE ' . $where : '' )
-                . ' ORDER BY `id` DESC; ');
-        $ff->execute(array(':domain' => $domain));
-            
-        } catch (Exception $ex) {
 
+        try {
+
+            $ff = $db->prepare('SELECT * FROM `gm_user` '
+                    . ( isset($where{1}) ? ' WHERE ' . $where : '' )
+                    . ' ORDER BY `id` DESC; ');
+            //$ff->execute(array(':domain' => $domain));
+            //$sf[':domain'] = $_SERVER['HTTP_HOST'];
+            $ff->execute($sf);
+        } catch (Exception $ex) {
+            
         }
 
         $dop_sql = '';
@@ -84,7 +140,7 @@ class Lk {
 
         $ff1 = $db->prepare('SELECT * FROM `gm_user_option` WHERE ' . $dop_sql . ' ;');
         $ff1->execute();
-        
+
         while ($r = $ff1->fetch()) {
 
             if (!isset($res[$r['user']]['dop'])) {
@@ -95,28 +151,65 @@ class Lk {
             $res[$r['user']]['dops'][$r['option']] = $r['value'];
         }
 
-        $ff1 = $db->prepare('SELECT access, var1, var2, user, module FROM gm_user_access WHERE ( ' . $dop_sql . ' ) AND status = \'ok\' ;');
-        $ff1->execute();
-        while ($r = $ff1->fetch()) {
-            if (!isset($res[$r['user']]['access_mod']))
-                $res[$r['user']]['access_mod'] = array();
+        try {
 
-            $res[$r['user']]['access_mod'][$r['module']][$r['var1']] = $r;
+
+            $ff1 = $db->prepare('SELECT access, var1, var2, user, module FROM gm_user_access WHERE ( ' . $dop_sql . ' ) AND status = \'ok\' ;');
+            $ff1->execute();
+
+            while ($r = $ff1->fetch()) {
+                if (!isset($res[$r['user']]['access_mod']))
+                    $res[$r['user']]['access_mod'] = array();
+
+                $res[$r['user']]['access_mod'][$r['module']][$r['var1']] = $r;
+            }
+        } catch ( \PDOException $ex ) {
+
+            if (strpos($ex->getMessage(), 'no such table') !== false) {
+            
+            $ff12 = $db->prepare('CREATE TABLE gm_user_access (
+                `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                `folder` VARCHAR (50),
+                `module` VARCHAR (50),
+                `var1` VARCHAR (150),
+                `var2` VARCHAR (150),
+                `user` int(11) NOT NULL REFERENCES gm_user (id),
+                `access` VARCHAR,
+                `status` VARCHAR,
+                `d` INTEGER NOT NULL,
+                `t` INTEGER NOT NULL
+            );');
+            $ff12->execute();
+            
+            }
+            
         }
+
+
+
+
+
+
+
 
         return $res;
     }
 
-    public static function getUser($db, int $id, $login = null, $pass = null, $folder = null) {
+    public static function getUser($db, $id, $login = null, $pass = null, $folder = null) {
 
+        //echo '<br/>'.$id;
+        //die;
+        
         $s = 'SELECT * FROM `gm_user` as `u` WHERE '
                 . ' u.status != \'delete\' '
-                . ( $id !== null ? ' AND ( `soc_web_id` = :id  OR `id` = :id ) ' : '' )
+                . ( !empty($id) ? ' AND ( `soc_web_id` = :id  OR `id` = :id ) ' : '' )
                 . ( isset($folder{1}) ? ' AND `folder` = :folder ' : '' )
                 . ( isset($login{1}) ? ' AND u.login = :login ' : '' )
                 . ( isset($pass{1}) ? ' AND u.pass5 = :pass ' : '' )
                 . ' LIMIT 1 ;';
-        // echo '<br/>' . $s;
+                
+        //echo '<br/>' . $s;
+        
         $sql = $db->prepare($s);
         $dop_ar = [];
 
@@ -130,10 +223,11 @@ class Lk {
             $dop_ar[':folder'] = (string) $folder;
 
         if ($id !== null)
-            $dop_ar[':id'] = (int) $id;
+            $dop_ar[':id'] = $id;
 
-        // \f\pa($dop_ar);
-
+        //\f\pa($dop_ar);
+        //exit;
+        
         $sql->execute($dop_ar);
 
         if ($user = $sql->fetch()) {
@@ -218,6 +312,27 @@ class Lk {
             `val5` varchar(150) DEFAULT NULL
              ) ;');
         $ff2->execute();
+        
+//CREATE TABLE `gm_user_di_mod` (
+//  `id` int(11) NOT NULL,
+//  `user_id` int(5) NOT NULL,
+//  `folder` varchar(50) NOT NULL,
+//  `module` varchar(50) NOT NULL,
+//  `status` set('yes','no') NOT NULL DEFAULT 'yes',
+//  `mode` set('site','didrive') NOT NULL
+//) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='доступ к модулям';
+
+        $ff2 = $db->prepare('CREATE TABLE IF NOT EXISTS `gm_user_di_mod` ( 
+            `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL , 
+            `user_id` int(7) NOT NULL, 
+            `folder` VARCHAR(100) NOT NULL, 
+            `module` VARCHAR(100) NOT NULL, 
+            `status` VARCHAR(20) NOT NULL DEFAULT \'yes\', 
+            `mode` VARCHAR(10) NOT NULL 
+             ) ;');
+        $ff2->execute();
+        
+        
     }
 
     /**
@@ -251,7 +366,7 @@ class Lk {
 
         try {
 
-            $result = self::getUser($db, (int) $user['uid'], null, null, $folder);
+            $result = self::getUser($db, $user['uid'], null, null, $folder);
         } catch (\PDOException $ex) {
 
             if (strpos($ex->getMessage(), 'no such table') !== false) {
@@ -337,6 +452,7 @@ class Lk {
                 $indb2['city_name'] = $response[0]['city']['title'];
                 $indb2['avatar'] = $response[0]['photo'];
             }
+            
         }
 
         //\f\pa($indb2, 2, null, 'добавление пользователя в новую таблицу'); die;
