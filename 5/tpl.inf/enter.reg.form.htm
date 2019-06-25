@@ -1,0 +1,178 @@
+{# кнопы входа выхода #}
+
+{% if session.now_user is defined and session.now_user.id is defined and session.now_user.id|length >= 1 %}
+
+    <!-- Пример одной кнопки опасности -->  
+    <div class="btn-group" style="margin-right:150px;">
+        <button type="button" class="btn btn-light dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <img 
+
+                {% if session.now_user.avatar is defined %}
+                    src="{{ session.now_user.avatar }}" 
+                {% else %}
+                    src="/0.site/exe/peticii/1/avatar.jpg" 
+                {% endif %}
+
+                style="width:28px;height:28px; border-radius:20%;" alt="">
+            {% if session.now_user is defined and session.now_user.name is defined %}{{ session.now_user.name }}{% endif %}
+        </button>
+        <div class="dropdown-menu">
+            <a class="dropdown-item" href="/050.lk/exit/">Выход</a>
+        </div>
+    </div>    
+
+{% else %}
+
+    <script src='https://www.google.com/recaptcha/api.js'></script>
+    <script src="//ulogin.ru/js/ulogin.js"></script>
+
+    <div style="padding-left:10px;padding-right: 10px;">
+        <a href="" class="btn btn-light" 
+           data-toggle="modal" data-target="#modal-enter" 
+           >Вход</a>
+    </div>
+
+{% endif %}
+
+
+{# если чел вошёл #}
+{% if session.now_user is defined and session.now_user.id is defined  and session.now_user.id|length > 0 %}
+
+{% else %}
+
+    {# если чел еще НЕ вошёл / всплывающие формы вход - рега - вост пароля #}
+
+    <span>
+
+        <script type="text/javascript">
+            var onloadCallback = function () {
+                mysitekey = '{/literal}{$now_inf_cfg.recapcha_key}{literal}';
+                grecaptcha.render('recaptcha1', {
+                    'sitekey': mysitekey
+                });
+                grecaptcha.render('recaptcha2', {
+                    'sitekey': mysitekey,
+                    // 'theme' : 'dark', //default - light
+                    // 'type' : 'audio', //default - image
+                    // 'size' : 'compact', //default - normal
+                    'tabindex': 1
+                            // , //default - 0
+                            // 'callback' : , //function on success
+                            // 'expired-callback' : //function when response expires
+                });
+            };
+        </script>
+
+        <style>
+            .modal-backdrop { z-index: 5; }
+        </style>
+
+        {# форма входа и востановл пароля #}
+
+        <div id="modal-enter" tabindex="-1" role="dialog" aria-labelledby="modal-1Label" aria-hidden="true" class="modal fade" >
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-body">
+
+                        <h4 id="modal-1Label" class="modal-title">Вход</h4>
+                        <button type="button" data-dismiss="modal" aria-hidden="true" class="close"></button>
+
+                        <form class="lk-form" id="access_form" method='post' action='/050.lk/' >
+
+                            <input type="hidden" name="type" value="enter_form" >
+                        </form>
+
+                        <div class="social-buttons">
+                            <center>
+                                <div id="uLogin" data-ulogin="verify=1;display=panel;theme=classic;fields=first_name,last_name;providers=vkontakte,odnoklassniki,google,facebook;redirect_uri=http%3A%2F%2F{{ server.HTTP_HOST }}%2F050.lk%2F;mobilebuttons=0;"></div>
+                            </center>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# форма реги #}
+
+        <div id="modal-reg" tabindex="-1" role="dialog" aria-labelledby="modal-1Label" aria-hidden="true" class="modal fade">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-body">
+
+                        <h4 class="modal-title" >Регистрация</h4>
+                        <button type="button" data-dismiss="modal" aria-hidden="true" class="close"></button>
+
+                        <form class="lk-form" id="access_form" method='post' action='/050.lk/' >
+
+                            <input type="hidden" name="type" value="reg_form" >
+
+                            <div class="form-group">
+                                <div class="input-group"><span class="input-group-addon"><i class="user-form"></i></span>
+                                    <input type="text" name="name" id="input_reg_name"
+                                           placeholder="Имя" class="form-control" required />
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="input-group"><span class="input-group-addon"><i class="user-form"></i></span>
+                                    <input type="text" name="family" id="input_reg_family"
+                                           placeholder="Фамилия" class="form-control" required />
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="input-group"><span class="input-group-addon"> <i class="mail-form"></i></span>
+                                    <input type="email" name="email" id="input_reg_mail"
+                                           placeholder="E-mail" class="form-control" required />
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="input-group"><span class="input-group-addon"><i class="icon-key"></i></span>
+                                    <input type="password" id="pass1" name="pass" placeholder="Пароль" class="form-control" required />
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="input-group"><span class="input-group-addon"><i class="icon-key"></i></span>
+                                    <input type="password" id="pass2" name="pass2" placeholder="Подтвердите пароль" class="form-control" required />
+                                </div>
+                            </div>
+
+                            <div class="text-center" style="margin-bottom:15px;">
+                                <div id="recaptcha1"></div>
+                            </div>
+
+                            <div id="personalii" class="form-group" style="height: 45px">
+                                <div class="input-group" ><span class="input-group-addon"><i class="icon-key"></i></span>
+                                    <div style="border: 1px solid #dcdcdc; height: 45px" >
+
+                                        <input type="checkbox" name="access_data" 
+                                               id="access_data01" value="da"
+                                               style="margin:15px;display:inline-block;float:left;max-height: 15px;width:15px" 
+                                               required />
+                                        Разрешаю обработку персональных данных
+
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="text-center">
+                                <p style="font-size: 80%;" id="text_reg" >Все поля обязательны&nbsp;для&nbsp;заполнения</p>
+                                <input type="submit" class="btn" name="action_reg" value="Зарегистрироваться" />
+                            </div>
+
+                        </form>
+
+                        <div class="social-buttons">
+                            <div class="social--title">Или войдите при помощи:</div>
+
+                            <center>
+                                <div id="uLogin1" data-ulogin="verify=1;display=panel;theme=classic;fields=first_name,last_name;providers=vkontakte,odnoklassniki,google,facebook;redirect_uri=http%3A%2F%2F{{ constant('Server::HTTP_HOST') }}%2F050.lk%2F;mobilebuttons=0;"></div>
+                            </center>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>      
+
+    </span>
+
+{% endif %}
