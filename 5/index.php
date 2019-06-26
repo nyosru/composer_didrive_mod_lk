@@ -20,18 +20,6 @@ if (!isset($_SESSION['now_user']['id'])) {
         $_SESSION['now_user'] = \Nyos\Mod\Lk::enterSoc($db, $vv['folder'], $_POST['token']);
         //\f\pa($_SESSION['now_user']);
 
-        
-        
-        if (file_exists($_SERVER['DOCUMENT_ROOT'] . '/include/Nyos/nyos_msg.php')) {
-            require_once $_SERVER['DOCUMENT_ROOT'] . '/include/Nyos/nyos_msg.php';
-            $e = '';
-            foreach ($_SESSION['now_user'] as $k => $v) {
-                if (isset($v{0}))
-                    $e .= $k . ': ' . $v . PHP_EOL;
-            }
-            \Nyos\NyosMsg::sendTelegramm('Вход на сайт ' . $_SERVER['HTTP_HOST'] . PHP_EOL . PHP_EOL . $e);
-        }
-
         $sql = $db->prepare('SELECT * FROM `gm_user_option` WHERE `user` = :user ;');
         $sql->execute(array(':user' => $_SESSION['now_user']['id']));
 
@@ -47,8 +35,29 @@ if (!isset($_SESSION['now_user']['id'])) {
             }
         }
 
-        
-        
+
+        /**
+         * если есть модуль отправки сообщений в телегу, то шлём
+         */
+        if (class_exists('\\nyos\\Msg')) {
+
+            $e = '';
+            foreach ($_SESSION['now_user'] as $k => $v) {
+                if (isset($v{0}))
+                    $e .= $k . ': ' . $v . PHP_EOL;
+            }
+
+            \nyos\Msg::sendTelegramm('Вход на сайт' . PHP_EOL . PHP_EOL . $e, null, 1);
+
+            if (isset($vv['info_send_telegram']['enter_on_site'])) {
+                foreach ($vv['info_send_telegram']['enter_on_site'] as $k => $v) {
+                    \nyos\Msg::sendTelegramm('Вход на сайт' . PHP_EOL . PHP_EOL . $e, $v);
+                    //\Nyos\NyosMsg::sendTelegramm('Вход в управление ' . PHP_EOL . PHP_EOL . $e, $k );
+                }
+            }
+        }
+
+
         if (isset($_REQUEST['goto']{1})) {
             header('Location: http://' . $_SERVER['HTTP_HOST'] . $_REQUEST['goto']);
             exit;
@@ -73,7 +82,7 @@ if (!isset($_SESSION['now_user']['id'])) {
             die('<html><head><meta http-equiv="refresh" content="0;http://' . $_SERVER['HTTP_HOST'] . '/' . $vv['now_level']['cfg.level'] . '/"></head>' .
                     '<body><br/><br/><br/><center>секунду пожалуйста</body></html>');
 
-            header('Location: http://' , $_SERVER['HTTP_HOST'] , '/' , $vv['now_level']['cfg.level'] , '/');
+            header('Location: http://', $_SERVER['HTTP_HOST'], '/', $vv['now_level']['cfg.level'], '/');
             exit;
         }
     }
