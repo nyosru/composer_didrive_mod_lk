@@ -248,6 +248,44 @@ class Lk {
 
     public static function creatTable($db) {
 
+        $ff2 = $db->prepare('CREATE TABLE IF NOT EXISTS `gm_user22` ( '
+                // наверное в MySQL .' `id` int NOT NULL AUTO_INCREMENT, '
+                // в SQLlite
+                . ' `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL , '
+                . ' `login` varchar(150) DEFAULT NULL, '
+                . ' `pass` varchar(100) DEFAULT NULL, '
+                . ' `pass5` varchar(40) DEFAULT NULL, '
+                . ' `folder` varchar(150) DEFAULT NULL, '
+                . ' `mail` varchar(150) DEFAULT NULL, '
+                . ' `mail_confirm` varchar(150) DEFAULT NULL, '
+                . ' `name` varchar(150) DEFAULT NULL, '
+                . ' `soname` varchar(150) DEFAULT NULL, '
+                . ' `family` varchar(150) DEFAULT NULL, '
+                . ' `phone` varchar(20) DEFAULT NULL, '
+                . ' `avatar` varchar(250) DEFAULT NULL, '
+                . ' `adres` varchar(250) DEFAULT NULL, '
+                . ' `about` TEXT, '
+                . ' `soc_web` varchar(50) DEFAULT NULL, '
+                . ' `soc_web_link` varchar(250) DEFAULT NULL, '
+                . ' `soc_web_id` varchar(250) DEFAULT NULL, '
+                // .' `access` set(\'admin\',\'moder\',\'guest\',\'gost\',\'block\') DEFAULT NULL, '
+                . ' `access` varchar(50) DEFAULT NULL, '
+                // .' `status` set(\'new\',\'job\',\'block\',\'delete\') NOT NULL DEFAULT \'new\', '
+                . ' `status` varchar(50) NOT NULL DEFAULT \'new\', '
+                // .' `admin_status` set(\'access\',\'block\',\'blank\',\'return\') DEFAULT NULL, '
+                . ' `admin_status` varchar(250) DEFAULT NULL, '
+                . ' `dt` INTEGER, '
+                . ' `ip` varchar(20) DEFAULT NULL, '
+                . ' `city` varchar(150) DEFAULT NULL,
+                        `city_name` varchar(150) DEFAULT NULL,
+                        `points` int(11) NOT NULL DEFAULT \'0\',
+                        `country` varchar(150) DEFAULT NULL,
+                        `recovery` varchar(50) DEFAULT NULL,
+                        `recovery_dt` timestamp NULL DEFAULT NULL
+                      ) ;');
+        //$ff->execute([$domain]);
+        $ff2->execute();
+
         $ff2 = $db->prepare('CREATE TABLE IF NOT EXISTS `gm_user` ( '
                 // наверное в MySQL .' `id` int NOT NULL AUTO_INCREMENT, '
                 // в SQLlite
@@ -369,7 +407,14 @@ class Lk {
             $result = self::getUser($db, $user['uid'], null, null, $folder);
         } catch (\PDOException $ex) {
 
-            if (strpos($ex->getMessage(), 'no such table') !== false) {
+            if (
+                    strpos($ex->getMessage(), 'no such table') !== false 
+                    ||
+                    ( 
+                        strpos($ex->getMessage(), 'Table') !== false 
+                        && strpos($ex->getMessage(), 'doesn\'t exist') !== false 
+                    ) 
+                ) {
                 self::creatTable($db);
                 $result = self::getUser($db, $user['uid'], null, null, $folder);
             }
