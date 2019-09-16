@@ -1,7 +1,7 @@
 {
     "name": "didrive_mod/lk",
     "description": "Модуль для Didrive - lk",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "keywords": [
         "didrive", "module", "nyos", "uralweb.info"
     ],

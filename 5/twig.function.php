@@ -9,8 +9,6 @@
 
 $function = new Twig_SimpleFunction('lk_enter_form', function ( ) {
     
-    
-    
     $e = file_get_contents( dirname(__FILE__).'/tpl.inf/enter.reg.form.htm' );
     
     return $e;
@@ -18,4 +16,10 @@ $function = new Twig_SimpleFunction('lk_enter_form', function ( ) {
 $twig->addFunction($function);
 
 
-//echo '<br/>'.__FILE__.' '.__LINE__;
+$function = new Twig_SimpleFunction('lk__getUsers', function ( $db, $folder ) {
+
+    $return = \Nyos\mod\lk::getUsers($db, $folder );
+    return $return;
+    
+});
+$twig->addFunction($function);

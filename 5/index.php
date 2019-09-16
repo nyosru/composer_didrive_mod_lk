@@ -5,6 +5,10 @@
 // echo '<br/>'.__FILE__.' '.__LINE__;
 // \f\pa($_SESSION,2);
 
+//$vv['in_body_end_js']['https://www.google.com/recaptcha/api.js'] = 1;
+//$vv['in_body_end_js']['//ulogin.ru/js/ulogin.js"></script>'] = 1;
+
+
 /**
  * входа не было ещё
  */
