@@ -18,7 +18,6 @@ if (!defined('IN_NYOS_PROJECT'))
 class Lk {
 
     public static $type = 'now_user';
-    
     // и для дидрайва
     // public static $type = 'now_user_di';
     public static $user_di_access = array();
@@ -38,55 +37,96 @@ class Lk {
         )
     );
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
     public static function getDidriveUsersAccess($db, string $folder, $access_id = null) {
 
         if (isset(self::$user_di_access[$folder])) {
             if (isset($access_id{0}) && $access_id !== null && isset(self::$user_di_access[$folder][$access_id])) {
+                echo '<br/>' . __LINE__;
                 return self::$user_di_access[$folder][$access_id];
             } else {
+                echo '<br/>' . __LINE__;
                 return self::$user_di_access[$folder];
             }
         }
 
-        $res = \f\db\getSql($db, 'SELECT 
-                u.id user
-                ,m.module
-                ,m.status
-                ,m.mode
-            FROM gm_user_di_mod m
-                INNER JOIN gm_user u ON u.folder = \'' . addslashes($folder) . '_di\' AND u.id = m.user_id
-            WHERE 
-                m.folder = \'' . addslashes($folder) . '\'
+        // \f\pa($access_id);
 
-            ; ', null);
-        //f\pa($res);
-        $res2 = array();
+        $sql = 'SELECT 
+            m.* '
+//                . ' u.id user
+//                ,m.module
+//                ,m.status
+//                ,m.mode '
+                . ' FROM gm_user_di_mod m '
+                // . ' WHERE '
+                .' INNER JOIN gm_user u ON u.folder = :folder_di AND u.id = m.user_id '.(!empty($access_id) ? ' AND u.id = :user ' : '' )
+                . ' WHERE '
+                .' m.user_id = :user '
+                .' AND m.folder = :folder
+            ;';
+//            WHERE 
+//                m.folder = :folder
+//
+//            ; '
+        // \f\pa($sql);
+        $ff = $db->prepare($sql);
 
-        foreach ($res as $k => $v) {
-            $res2[$v['user']][$v['mode']][$v['module']] = $v['status'];
+        $ex = [
+            ':folder' => $folder,
+            ':folder_di' => $folder . '_di'
+        ];
+        if (!empty($access_id))
+            $ex[':user'] = $access_id;
+
+        // \f\pa($ex);
+
+        $ff->execute($ex);
+
+        self::$user_di_access[$folder] = [];
+
+        while ($v = $ff->fetch()) {
+            // \f\pa($v);
+            //self::$user_di_access[$folder][$v['user_id']][$v['mode']][$v['module']] = $v['status'];
+            self::$user_di_access[$folder][$v['user_id']][$v['module']] = $v['status'];
         }
 
-        self::$user_di_access[$folder] = $res2;
+        /*
+          $res = \f\db\getSql($db, 'SELECT
+          u.id user
+          ,m.module
+          ,m.status
+          ,m.mode
+          FROM gm_user_di_mod m
+          INNER JOIN gm_user u ON u.folder = \'' . addslashes($folder) . '_di\' AND u.id = m.user_id
+          WHERE
+          m.folder = \'' . addslashes($folder) . '\'
 
+          ; ', null);
+          //f\pa($res);
+          self::$user_di_access[$folder] = [];
+
+          foreach ($res as $k => $v) {
+          \f\pa($v);
+          self::$user_di_access[$folder][$v['user']][$v['mode']][$v['module']] = $v['status'];
+          }
+         */
+
+//        self::$user_di_access[$folder] = $res2;
         // return array( 'st' => $status, 'data' => $res, 'dataw' => $res2 );
 
-        if (isset($access_id{0}) && $access_id !== null && isset($res2[$access_id])) {
-            return $res2[$access_id];
-        } else {
-            return $res2;
+        if (!empty($access_id) && isset(self::$user_di_access[$folder][$access_id])) {
+//            echo '<br/>'.__LINE__;
+            return self::$user_di_access[$folder][$access_id];
         }
+        //
+        else {
+//            echo '<br/>'.__LINE__;
+            return self::$user_di_access[$folder];
+            //return $res2;
+        }
+        
     }
-    
-    
+
     /**
      * получение списка пользователей
      * @global type $status
@@ -163,11 +203,11 @@ class Lk {
 
                 $res[$r['user']]['access_mod'][$r['module']][$r['var1']] = $r;
             }
-        } catch ( \PDOException $ex ) {
+        } catch (\PDOException $ex) {
 
             if (strpos($ex->getMessage(), 'no such table') !== false) {
-            
-            $ff12 = $db->prepare('CREATE TABLE gm_user_access (
+
+                $ff12 = $db->prepare('CREATE TABLE gm_user_access (
                 `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                 `folder` VARCHAR (50),
                 `module` VARCHAR (50),
@@ -179,10 +219,8 @@ class Lk {
                 `d` INTEGER NOT NULL,
                 `t` INTEGER NOT NULL
             );');
-            $ff12->execute();
-            
+                $ff12->execute();
             }
-            
         }
 
 
@@ -199,17 +237,17 @@ class Lk {
 
         //echo '<br/>'.$id;
         //die;
-        
+
         $s = 'SELECT * FROM `gm_user` as `u` WHERE '
                 . ' u.status != \'delete\' '
-                . ( !empty($id) ? ' AND ( `soc_web_id` = :id  OR `id` = :id ) ' : '' )
+                . (!empty($id) ? ' AND ( `soc_web_id` = :id  OR `id` = :id ) ' : '' )
                 . ( isset($folder{1}) ? ' AND `folder` = :folder ' : '' )
                 . ( isset($login{1}) ? ' AND u.login = :login ' : '' )
                 . ( isset($pass{1}) ? ' AND u.pass5 = :pass ' : '' )
                 . ' LIMIT 1 ;';
-                
+
         //echo '<br/>' . $s;
-        
+
         $sql = $db->prepare($s);
         $dop_ar = [];
 
@@ -227,7 +265,7 @@ class Lk {
 
         //\f\pa($dop_ar);
         //exit;
-        
+
         $sql->execute($dop_ar);
 
         if ($user = $sql->fetch()) {
@@ -247,44 +285,6 @@ class Lk {
     }
 
     public static function creatTable($db) {
-
-        $ff2 = $db->prepare('CREATE TABLE IF NOT EXISTS `gm_user22` ( '
-                // наверное в MySQL .' `id` int NOT NULL AUTO_INCREMENT, '
-                // в SQLlite
-                . ' `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL , '
-                . ' `login` varchar(150) DEFAULT NULL, '
-                . ' `pass` varchar(100) DEFAULT NULL, '
-                . ' `pass5` varchar(40) DEFAULT NULL, '
-                . ' `folder` varchar(150) DEFAULT NULL, '
-                . ' `mail` varchar(150) DEFAULT NULL, '
-                . ' `mail_confirm` varchar(150) DEFAULT NULL, '
-                . ' `name` varchar(150) DEFAULT NULL, '
-                . ' `soname` varchar(150) DEFAULT NULL, '
-                . ' `family` varchar(150) DEFAULT NULL, '
-                . ' `phone` varchar(20) DEFAULT NULL, '
-                . ' `avatar` varchar(250) DEFAULT NULL, '
-                . ' `adres` varchar(250) DEFAULT NULL, '
-                . ' `about` TEXT, '
-                . ' `soc_web` varchar(50) DEFAULT NULL, '
-                . ' `soc_web_link` varchar(250) DEFAULT NULL, '
-                . ' `soc_web_id` varchar(250) DEFAULT NULL, '
-                // .' `access` set(\'admin\',\'moder\',\'guest\',\'gost\',\'block\') DEFAULT NULL, '
-                . ' `access` varchar(50) DEFAULT NULL, '
-                // .' `status` set(\'new\',\'job\',\'block\',\'delete\') NOT NULL DEFAULT \'new\', '
-                . ' `status` varchar(50) NOT NULL DEFAULT \'new\', '
-                // .' `admin_status` set(\'access\',\'block\',\'blank\',\'return\') DEFAULT NULL, '
-                . ' `admin_status` varchar(250) DEFAULT NULL, '
-                . ' `dt` INTEGER, '
-                . ' `ip` varchar(20) DEFAULT NULL, '
-                . ' `city` varchar(150) DEFAULT NULL,
-                        `city_name` varchar(150) DEFAULT NULL,
-                        `points` int(11) NOT NULL DEFAULT \'0\',
-                        `country` varchar(150) DEFAULT NULL,
-                        `recovery` varchar(50) DEFAULT NULL,
-                        `recovery_dt` timestamp NULL DEFAULT NULL
-                      ) ;');
-        //$ff->execute([$domain]);
-        $ff2->execute();
 
         $ff2 = $db->prepare('CREATE TABLE IF NOT EXISTS `gm_user` ( '
                 // наверное в MySQL .' `id` int NOT NULL AUTO_INCREMENT, '
@@ -350,7 +350,7 @@ class Lk {
             `val5` varchar(150) DEFAULT NULL
              ) ;');
         $ff2->execute();
-        
+
 //CREATE TABLE `gm_user_di_mod` (
 //  `id` int(11) NOT NULL,
 //  `user_id` int(5) NOT NULL,
@@ -369,8 +369,6 @@ class Lk {
             `mode` VARCHAR(10) NOT NULL 
              ) ;');
         $ff2->execute();
-        
-        
     }
 
     /**
@@ -407,14 +405,7 @@ class Lk {
             $result = self::getUser($db, $user['uid'], null, null, $folder);
         } catch (\PDOException $ex) {
 
-            if (
-                    strpos($ex->getMessage(), 'no such table') !== false 
-                    ||
-                    ( 
-                        strpos($ex->getMessage(), 'Table') !== false 
-                        && strpos($ex->getMessage(), 'doesn\'t exist') !== false 
-                    ) 
-                ) {
+            if (strpos($ex->getMessage(), 'no such table') !== false) {
                 self::creatTable($db);
                 $result = self::getUser($db, $user['uid'], null, null, $folder);
             }
@@ -497,7 +488,6 @@ class Lk {
                 $indb2['city_name'] = $response[0]['city']['title'];
                 $indb2['avatar'] = $response[0]['photo'];
             }
-            
         }
 
         //\f\pa($indb2, 2, null, 'добавление пользователя в новую таблицу'); die;

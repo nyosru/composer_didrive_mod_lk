@@ -5,7 +5,6 @@
 информер
 **/
 
-
 /*
 //f\pa($vv['now_inf_cfg']);
 
@@ -35,3 +34,17 @@ if (1 == 2) {
     }
 }
 */
+
+
+
+    // \f\pa(dir_site_module_nowlev_tpl_inf ) ;
+    // \f\pa(dir_mods_mod_vers_tpl_inf ) ;
+
+    // \f\pa($dir_tpl_site);
+    // \f\pa($w);
+
+    // $vv['inf_enter_form'] = \f\like_tpl( 'enter.reg.form', $dir_tpl_site, '/vendor/didrive_mod/'.$w['type'].'/'.$w['version'].'/tpl.inf/', DR ) ;
+    $vv['inf_enter_form'] = DS.'sites'.DS. \Nyos\Nyos::$folder_now . DS . 'module'.DS.$w['cfg.level'].DS.'tpl.inf'.DS.'enter.reg.form.htm';
+    // \f\pa($vv['inf_enter_form']);
+    // exit;
+    
