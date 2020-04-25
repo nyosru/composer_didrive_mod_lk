@@ -37,94 +37,87 @@ class Lk {
         )
     );
 
+    public static function getAccess($db, $access_id = null) {
+
+        $sql = 'SELECT 
+                u.id user
+                ,m.module
+                ,m.status
+                ,m.mode
+            FROM gm_user_di_mod m
+                INNER JOIN gm_user u ON u.id = m.user_id '
+                . (!empty($access_id) ? ' AND u.id = :user ' : '' )
+                . ' ; ';
+
+        $ff = $db->prepare($sql);
+
+        $sql_vars = [
+            ':user' => $access_id
+        ];
+//            $sql_vars[':status'] = 'show';
+//            $sql_vars[':mod_user'] = \Nyos\mod\JobDesc::$mod_jobman;
+//            $sql_vars[':mod_job_on'] = \Nyos\mod\JobDesc::$mod_man_job_on_sp;
+//            $sql_vars[':mod_sp'] = \Nyos\mod\JobDesc::$mod_sale_point;
+//// \f\pa($ff1);
+        $ff->execute($sql_vars);
+
+        $r2 = $ff->fetchAll();
+
+        $return = [];
+
+        foreach ($r2 as $k => $v) {
+            $return[$v['user']][$v['mode']][$v['module']] = $v['status'];
+        }
+
+        // return $ff->fetchAll();
+        if (!empty($access_id)) {
+            if (!empty($return[$access_id])) {
+                return $return[$access_id];
+            } else {
+                return false;
+            }
+        } else {
+            return $return;
+        }
+    }
+
     public static function getDidriveUsersAccess($db, string $folder, $access_id = null) {
 
         if (isset(self::$user_di_access[$folder])) {
             if (isset($access_id{0}) && $access_id !== null && isset(self::$user_di_access[$folder][$access_id])) {
-                echo '<br/>' . __LINE__;
                 return self::$user_di_access[$folder][$access_id];
             } else {
-                echo '<br/>' . __LINE__;
                 return self::$user_di_access[$folder];
             }
         }
 
-        // \f\pa($access_id);
+        $res = \f\db\getSql($db, 'SELECT 
+                u.id user
+                ,m.module
+                ,m.status
+                ,m.mode
+            FROM gm_user_di_mod m
+                INNER JOIN gm_user u ON u.folder = \'' . addslashes($folder) . '_di\' AND u.id = m.user_id
+            WHERE 
+                m.folder = \'' . addslashes($folder) . '\'
 
-        $sql = 'SELECT 
-            m.* '
-//                . ' u.id user
-//                ,m.module
-//                ,m.status
-//                ,m.mode '
-                . ' FROM gm_user_di_mod m '
-                // . ' WHERE '
-                .' INNER JOIN gm_user u ON u.folder = :folder_di AND u.id = m.user_id '.(!empty($access_id) ? ' AND u.id = :user ' : '' )
-                . ' WHERE '
-                .' m.user_id = :user '
-                .' AND m.folder = :folder
-            ;';
-//            WHERE 
-//                m.folder = :folder
-//
-//            ; '
-        // \f\pa($sql);
-        $ff = $db->prepare($sql);
+            ; ', null);
+        //f\pa($res);
+        $res2 = array();
 
-        $ex = [
-            ':folder' => $folder,
-            ':folder_di' => $folder . '_di'
-        ];
-        if (!empty($access_id))
-            $ex[':user'] = $access_id;
-
-        // \f\pa($ex);
-
-        $ff->execute($ex);
-
-        self::$user_di_access[$folder] = [];
-
-        while ($v = $ff->fetch()) {
-            // \f\pa($v);
-            //self::$user_di_access[$folder][$v['user_id']][$v['mode']][$v['module']] = $v['status'];
-            self::$user_di_access[$folder][$v['user_id']][$v['module']] = $v['status'];
+        foreach ($res as $k => $v) {
+            $res2[$v['user']][$v['mode']][$v['module']] = $v['status'];
         }
 
-        /*
-          $res = \f\db\getSql($db, 'SELECT
-          u.id user
-          ,m.module
-          ,m.status
-          ,m.mode
-          FROM gm_user_di_mod m
-          INNER JOIN gm_user u ON u.folder = \'' . addslashes($folder) . '_di\' AND u.id = m.user_id
-          WHERE
-          m.folder = \'' . addslashes($folder) . '\'
+        self::$user_di_access[$folder] = $res2;
 
-          ; ', null);
-          //f\pa($res);
-          self::$user_di_access[$folder] = [];
-
-          foreach ($res as $k => $v) {
-          \f\pa($v);
-          self::$user_di_access[$folder][$v['user']][$v['mode']][$v['module']] = $v['status'];
-          }
-         */
-
-//        self::$user_di_access[$folder] = $res2;
         // return array( 'st' => $status, 'data' => $res, 'dataw' => $res2 );
 
-        if (!empty($access_id) && isset(self::$user_di_access[$folder][$access_id])) {
-//            echo '<br/>'.__LINE__;
-            return self::$user_di_access[$folder][$access_id];
+        if (isset($access_id{0}) && $access_id !== null && isset($res2[$access_id])) {
+            return $res2[$access_id];
+        } else {
+            return $res2;
         }
-        //
-        else {
-//            echo '<br/>'.__LINE__;
-            return self::$user_di_access[$folder];
-            //return $res2;
-        }
-        
     }
 
     /**
