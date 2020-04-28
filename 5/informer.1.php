@@ -5,6 +5,28 @@
 информер
 **/
 
+
+
+
+
+//?
+//uid=5903492
+//&first_name=Серёжа
+//&last_name=Бакланов
+//&photo=https://sun3-12.userapi.com/c845121/v845121518/116ace/-M-1eSE0niA.jpg%3Fava=1
+//&photo_rec=https://sun3-13.userapi.com/c845121/v845121518/116ad1/Ealie_Hev_8.jpg%3Fava=1
+//&hash=a6abdb3c907cbc87c75c56a1a48feac8
+
+if( !empty( $_REQUEST['uid']) ){
+    
+    \f\pa($_REQUEST);
+    
+    die();
+    
+}
+
+
+
 /*
 //f\pa($vv['now_inf_cfg']);
 
