@@ -8,10 +8,10 @@ namespace Nyos\Mod;
 //echo __FILE__.'<br/>';
 // строки безопасности
 
-if (!defined('IN_NYOS_PROJECT'))
-    die('<center><h1><br><br><br><br>Cтудия Сергея</h1><p>Сработала защита <b>TPL</b> от злостных розовых хакеров.</p>
-    <a href="http://www.uralweb.info" target="_blank">Создание, дизайн, вёрстка и программирование сайтов.</a><br />
-    <a href="http://www.nyos.ru" target="_blank">Только отдельные услуги: Дизайн, вёрстка и программирование сайтов.</a>');
+//if (!defined('IN_NYOS_PROJECT'))
+//    die('<center><h1><br><br><br><br>Cтудия Сергея</h1><p>Сработала защита <b>TPL</b> от злостных розовых хакеров.</p>
+//    <a href="http://www.uralweb.info" target="_blank">Создание, дизайн, вёрстка и программирование сайтов.</a><br />
+//    <a href="http://www.nyos.ru" target="_blank">Только отдельные услуги: Дизайн, вёрстка и программирование сайтов.</a>');
 
 // require_once $_SERVER['DOCUMENT_ROOT'] . DS . 'include' . DS . 'f' . DS . 'ajax.php';
 
