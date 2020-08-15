@@ -8,20 +8,39 @@ namespace Nyos\Mod;
 //echo __FILE__.'<br/>';
 // строки безопасности
 
-//if (!defined('IN_NYOS_PROJECT'))
-//    die('<center><h1><br><br><br><br>Cтудия Сергея</h1><p>Сработала защита <b>TPL</b> от злостных розовых хакеров.</p>
-//    <a href="http://www.uralweb.info" target="_blank">Создание, дизайн, вёрстка и программирование сайтов.</a><br />
-//    <a href="http://www.nyos.ru" target="_blank">Только отдельные услуги: Дизайн, вёрстка и программирование сайтов.</a>');
+if (!defined('IN_NYOS_PROJECT'))
+    die('<center><h1><br><br><br><br>Cтудия Сергея</h1><p>Сработала защита <b>TPL</b> от злостных розовых хакеров.</p>
+    <a href="http://www.uralweb.info" target="_blank">Создание, дизайн, вёрстка и программирование сайтов.</a><br />
+    <a href="http://www.nyos.ru" target="_blank">Только отдельные услуги: Дизайн, вёрстка и программирование сайтов.</a>');
 
 // require_once $_SERVER['DOCUMENT_ROOT'] . DS . 'include' . DS . 'f' . DS . 'ajax.php';
 
 class Lk {
 
+    /**
+     * тип авторизации
+     * соц сеть = soc
+     * @var type 
+     */
+    public static $type_aut = '';
     public static $type = 'now_user';
     // и для дидрайва
     // public static $type = 'now_user_di';
     public static $user_di_access = array();
     public static $dop = array();
+    /**
+     * поля в базе сотрудников
+     * @var type 
+     */
+    public static $polya_db = [
+        'login','pass','pass5','folder','mail',
+        'mail_confirm','name','soname','family',
+        'phone','avatar','adres','about',
+        'soc_web','soc_web_link',
+        'soc_web_id','access','status','admin_status','dt','ip'
+        ,'city','city_name','points','country','recovery','recovery_dt'
+                    
+    ];
     public static $access_di_site = array(
         'admin' => array(
             'name' => 'Администратор'
@@ -419,6 +438,33 @@ class Lk {
         }
     }
 
+    public static function enterVk($db, string $soc_id) {
+
+        $in = [
+            ':soc_id' => $soc_id,
+        ];
+
+        if (empty($folder)) {
+            $in[':folder'] = \Nyos\Nyos::$folder_now;
+
+            // \f\pa($_SERVER);
+            if (strpos($_SERVER['PHP_SELF'], 'didrive') !== false) {
+                $in[':folder'] .= '_di';
+            }
+        }
+
+        $sql = 'SELECT * FROM `gm_user` WHERE folder = :folder AND soc_web_id = :soc_id LIMIT 1;';
+        // \f\pa($sql);
+        $ff = $db->prepare($sql);
+        // \f\pa($in);
+        $ff->execute($in);
+        $re = $ff->fetch();
+        // \f\pa($re);
+        
+        return $re ?? false;
+
+    }
+
     /**
      * 
      * @param type $db
@@ -430,6 +476,8 @@ class Lk {
      * @throws \Exception
      */
     public static function enter($db, string $login_uid, string $pass = null, $folder = null, $array = []) {
+
+        // \f\pa( [ $login_uid, $pass , $folder , $array ] );
 
         try {
 
@@ -446,7 +494,7 @@ class Lk {
             // \f\pa($result, '', '', 'get_user');
 
             if ($result === false) {
-                
+
 //                echo '<br/>#' . __LINE__ . ' ' . __FILE__;
 //                \f\pa($_REQUEST);
 
@@ -476,7 +524,7 @@ class Lk {
                 $result = self::getUser($db, $login_uid, null, null, $folder);
 
                 $result['new_user_add'] = true;
-                
+
 //                \f\pa($new_user_id);
             }
 
@@ -573,7 +621,7 @@ class Lk {
         }
 
 
-        if ( empty($indb2['avatar']) && $indb2['soc_web'] == 'vkontakte' ) {
+        if (empty($indb2['avatar']) && $indb2['soc_web'] == 'vkontakte') {
 
             if (class_exists('\VK\Client\VKApiClient')) {
                 $vk = new \VK\Client\VKApiClient();
