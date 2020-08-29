@@ -28,18 +28,18 @@ class Lk {
     // public static $type = 'now_user_di';
     public static $user_di_access = array();
     public static $dop = array();
+
     /**
      * поля в базе сотрудников
      * @var type 
      */
     public static $polya_db = [
-        'login','pass','pass5','folder','mail',
-        'mail_confirm','name','soname','family',
-        'phone','avatar','adres','about',
-        'soc_web','soc_web_link',
-        'soc_web_id','access','status','admin_status','dt','ip'
-        ,'city','city_name','points','country','recovery','recovery_dt'
-                    
+        'login', 'pass', 'pass5', 'folder', 'mail',
+        'mail_confirm', 'name', 'soname', 'family',
+        'phone', 'avatar', 'adres', 'about',
+        'soc_web', 'soc_web_link',
+        'soc_web_id', 'access', 'status', 'admin_status', 'dt', 'ip'
+        , 'city', 'city_name', 'points', 'country', 'recovery', 'recovery_dt'
     ];
     public static $access_di_site = array(
         'admin' => array(
@@ -58,52 +58,79 @@ class Lk {
 
     public static function getAccess($db, $access_id = null) {
 
-        $sql = 'SELECT 
+        try {
+
+            if (isset(\Nyos\Nyos::$db_type) && \Nyos\Nyos::$db_type == 'pg') {
+                $sql = 'SELECT 
+                u.id as user
+                , m.module
+                , m.status
+                , m.mode
+            FROM gm_user_di_mod m
+                INNER JOIN gm_user u ON u.id = m.user_id '
+                        . (!empty($access_id) ? ' AND u.id = :user ' : '' )
+                        . ' ; ';
+                $sql_vars = [
+                    ':user' => $access_id
+                ];
+            } else {
+                $sql = 'SELECT 
                 u.id user
                 ,m.module
                 ,m.status
                 ,m.mode
             FROM gm_user_di_mod m
                 INNER JOIN gm_user u ON u.id = m.user_id '
-                . (!empty($access_id) ? ' AND u.id = :user ' : '' )
-                . ' ; ';
+                        . (!empty($access_id) ? ' AND u.id = :user ' : '' )
+                        . ' ; ';
+                $sql_vars = [
+                    ':user' => $access_id
+                ];
+            }
 
-        $ff = $db->prepare($sql);
+            $ff = $db->prepare($sql);
 
-        $sql_vars = [
-            ':user' => $access_id
-        ];
 //            $sql_vars[':status'] = 'show';
 //            $sql_vars[':mod_user'] = \Nyos\mod\JobDesc::$mod_jobman;
 //            $sql_vars[':mod_job_on'] = \Nyos\mod\JobDesc::$mod_man_job_on_sp;
 //            $sql_vars[':mod_sp'] = \Nyos\mod\JobDesc::$mod_sale_point;
 //// \f\pa($ff1);
-        $ff->execute($sql_vars);
+            $ff->execute($sql_vars);
 
-        $r2 = $ff->fetchAll();
+            $r2 = $ff->fetchAll();
 
-        $return = [];
+            $return = [];
 
-        foreach ($r2 as $k => $v) {
-            $return[$v['user']][$v['mode']][$v['module']] = $v['status'];
-        }
+            foreach ($r2 as $k => $v) {
+                $return[$v['user']][$v['mode']][$v['module']] = $v['status'];
+            }
 
-        // return $ff->fetchAll();
-        if (!empty($access_id)) {
-            if (!empty($return[$access_id])) {
-                return $return[$access_id];
+            // return $ff->fetchAll();
+            if (!empty($access_id)) {
+                if (!empty($return[$access_id])) {
+                    return $return[$access_id];
+                } else {
+                    return false;
+                }
             } else {
+                return $return;
+            }
+
+        } catch (\PDOException $ex) {
+
+            if( strpos( $ex->getMessage(), 'gm_user_di_mod' ) !== false  && strpos( $ex->getMessage(), 'does not exist' ) !== false  ){
+                self::creatTable($db, 'gm_user_di_mod' );
                 return false;
             }
-        } else {
-            return $return;
+                
         }
+        
     }
 
     public static function getDidriveUsersAccess($db, string $folder, $access_id = null) {
 
         if (isset(self::$user_di_access[$folder])) {
-            if (isset($access_id{0}) && $access_id !== null && isset(self::$user_di_access[$folder][$access_id])) {
+            if (!empty($access_id) && $access_id !== null && isset(self::$user_di_access[$folder][$access_id])) {
                 return self::$user_di_access[$folder][$access_id];
             } else {
                 return self::$user_di_access[$folder];
@@ -132,7 +159,7 @@ class Lk {
 
         // return array( 'st' => $status, 'data' => $res, 'dataw' => $res2 );
 
-        if (isset($access_id{0}) && $access_id !== null && isset($res2[$access_id])) {
+        if (!empty($access_id) && $access_id !== null && isset($res2[$access_id])) {
             return $res2[$access_id];
         } else {
             return $res2;
@@ -152,30 +179,41 @@ class Lk {
      */
     public static function getUsers($db, string $folder = null, string $type = null, string $status = null) {
 
+
+
+//\f\pa($db_cfg['type']);
+//\f\pa(\Nyos\Nyos::$db_type);
+//die();
+
+
         $where = '';
         $sf = [];
 
         if ($folder == 'di') {
-            $where .= ' `folder` LIKE \'%_di\' ';
-        } elseif (isset($folder{1})) {
-            $where .= ' `folder` = :folder ';
+
+            $where .= ' folder LIKE \'%_di\' ';
+        } elseif (!empty($folder)) {
+
+            $where .= ' folder = :folder ';
             $sf[':folder'] = $folder;
         }
 
         if ($type == 'moder') {
-            $where .= ( isset($where{1}) ? ' AND ' : '' ) . ' `access` = :access ';
+
+            $where .= (!empty($where) ? ' AND ' : '' ) . ' access = :access ';
             $sf[':access'] = 'moder';
         } elseif ($type == 'admin') {
-            $where .= ( isset($where{1}) ? ' AND ' : '' ) . ' `access` = :access ';
+
+            $where .= (!empty($where) ? ' AND ' : '' ) . ' access = :access ';
             $sf[':access'] = 'admin';
         }
 
 
         try {
 
-            $ff = $db->prepare('SELECT * FROM `gm_user` '
-                    . ( isset($where{1}) ? ' WHERE ' . $where : '' )
-                    . ' ORDER BY `id` DESC; ');
+            $ff = $db->prepare('SELECT * FROM gm_user '
+                    . (!empty($where) ? ' WHERE ' . $where : '' )
+                    . ' ORDER BY id DESC; ');
             //$ff->execute(array(':domain' => $domain));
             //$sf[':domain'] = $_SERVER['HTTP_HOST'];
             $ff->execute($sf);
@@ -186,11 +224,19 @@ class Lk {
         $dop_sql = '';
 
         while ($r = $ff->fetch()) {
-            $dop_sql .= ( isset($dop_sql{2}) ? ' OR ' : '' ) . ' `user` = \'' . $r['id'] . '\' ';
+            if (isset(\Nyos\Nyos::$db_type) && \Nyos\Nyos::$db_type == 'pg') {
+                $dop_sql .= (!empty($dop_sql) ? ' OR ' : '' ) . ' "user" = \'' . $r['id'] . '\' ';
+            } else {
+                $dop_sql .= (!empty($dop_sql) ? ' OR ' : '' ) . ' `user` = \'' . $r['id'] . '\' ';
+            }
             $res[$r['id']] = $r;
         }
 
-        $ff1 = $db->prepare('SELECT * FROM `gm_user_option` WHERE ' . $dop_sql . ' ;');
+        if (isset(\Nyos\Nyos::$db_type) && \Nyos\Nyos::$db_type == 'pg') {
+            $ff1 = $db->prepare('SELECT * FROM "gm_user_option" WHERE ' . $dop_sql . ' ;');
+        } else {
+            $ff1 = $db->prepare('SELECT * FROM `gm_user_option` WHERE ' . $dop_sql . ' ;');
+        }
         $ff1->execute();
 
         while ($r = $ff1->fetch()) {
@@ -204,7 +250,6 @@ class Lk {
         }
 
         try {
-
 
             $ff1 = $db->prepare('SELECT access, var1, var2, user, module FROM gm_user_access WHERE ( ' . $dop_sql . ' ) AND status = \'ok\' ;');
             $ff1->execute();
@@ -247,50 +292,74 @@ class Lk {
 
     public static function getUser($db, $id, $login = null, $pass = null, $folder = null) {
 
-        //echo '<br/>'.$id;
-        //die;
+        // \f\pa( [ $id, $login , $pass , $folder ] );
+//        //echo '<br/>'.$id;
+//        die;
 
-        $s = 'SELECT * FROM `gm_user` as `u` WHERE '
-                . ' u.status != \'delete\' '
-                . (!empty($id) ? ' AND ( `soc_web_id` = :id  OR `id` = :id ) ' : '' )
-                . (!empty($folder{1}) ? ' AND `folder` = :folder ' : '' )
-                . (!empty($login{1}) ? ' AND u.login = :login ' : '' )
-                . (!empty($pass{1}) ? ' AND u.pass5 = :pass ' : '' )
-                . ' LIMIT 1 ;';
+        try {
 
-        //echo '<br/>' . $s;
-        // \f\pa($s, '', '', 'sql');
+            if (\Nyos\nyos::$db_type == 'pg') {
 
-        $sql = $db->prepare($s);
-        $dop_ar = [];
+                $s = 'SELECT * FROM gm_user u WHERE '
+                        . ' u.status != \'delete\' '
+                        // . (!empty($id) ? ' AND ( id = :id OR soc_web_id = :id ) ' : '' )
+                        . (!empty($id) ? ' AND u.soc_web_id = :id ' : '' )
+                        . (!empty($login) ? ' AND u.login = :login ' : '' )
+                        . (!empty($pass) ? ' AND u.pass5 = :pass ' : '' )
+                        . ' LIMIT 1 ;';
 
-        if (!empty($login{1}))
-            $dop_ar[':login'] = $login;
+                // \f\pa($s);
+                $dop_ar = [];
 
-        if (!empty($pass{1}))
-            $dop_ar[':pass'] = md5($pass);
+                if (!empty($login))
+                    $dop_ar[':login'] = $login;
 
-        if (!empty($folder{1}))
-            $dop_ar[':folder'] = (string) $folder;
+                if (!empty($pass))
+                    $dop_ar[':pass'] = md5($pass);
 
-        if (!empty($id))
-            $dop_ar[':id'] = $id;
+                if (!empty($id))
+                    $dop_ar[':id'] = $id;
+            } else {
+                $s = 'SELECT * FROM `gm_user` as `u` WHERE '
+                        . ' u.status != \'delete\' '
+                        . (!empty($id) ? ' AND ( `soc_web_id` = :id  OR `id` = :id ) ' : '' )
+                        . (!empty($folder) ? ' AND `folder` = :folder ' : '' )
+                        . (!empty($login) ? ' AND u.login = :login ' : '' )
+                        . (!empty($pass) ? ' AND u.pass5 = :pass ' : '' )
+                        . ' LIMIT 1 ;';
+                $dop_ar = [];
 
-        // \f\pa($dop_ar,'','','sl dop_ar');
-        //exit;
+                if (!empty($login))
+                    $dop_ar[':login'] = $login;
 
-        $sql->execute($dop_ar);
+                if (!empty($pass))
+                    $dop_ar[':pass'] = md5($pass);
+
+                if (!empty($folder))
+                    $dop_ar[':folder'] = (string) $folder;
+
+                if (!empty($id))
+                    $dop_ar[':id'] = $id;
+            }
+
+            $sql = $db->prepare($s);
+            $sql->execute($dop_ar);
+        } catch (\Exception $ex) {
+////            \f\pa($ex);
+////            die();
+        }
 
         if ($user = $sql->fetch()) {
 
-            // \f\pa($user);
+//            \f\pa($user);
+//            die();
+
             return $user;
         } else {
 
             // \f\pa($user);
             // echo '<Br/>' . __FILE__ . ' #' . __LINE__;
-
-            if (isset($login{1})) {
+            if (!empty($login)) {
                 throw new \Exception('Логин, пароль указаны не верно.');
             } else {
                 return false;
@@ -298,47 +367,87 @@ class Lk {
         }
     }
 
-    public static function creatTable($db) {
+    public static function creatTable($db, $table = '') {
 
-        $ff2 = $db->prepare('CREATE TABLE IF NOT EXISTS `gm_user` ( '
-                // наверное в MySQL .' `id` int NOT NULL AUTO_INCREMENT, '
-                // в SQLlite
-                . ' `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL , '
-                . ' `login` varchar(150) DEFAULT NULL, '
-                . ' `pass` varchar(100) DEFAULT NULL, '
-                . ' `pass5` varchar(40) DEFAULT NULL, '
-                . ' `folder` varchar(150) DEFAULT NULL, '
-                . ' `mail` varchar(150) DEFAULT NULL, '
-                . ' `mail_confirm` varchar(150) DEFAULT NULL, '
-                . ' `name` varchar(150) DEFAULT NULL, '
-                . ' `soname` varchar(150) DEFAULT NULL, '
-                . ' `family` varchar(150) DEFAULT NULL, '
-                . ' `phone` varchar(20) DEFAULT NULL, '
-                . ' `avatar` varchar(250) DEFAULT NULL, '
-                . ' `adres` varchar(250) DEFAULT NULL, '
-                . ' `about` TEXT, '
-                . ' `soc_web` varchar(50) DEFAULT NULL, '
-                . ' `soc_web_link` varchar(250) DEFAULT NULL, '
-                . ' `soc_web_id` varchar(250) DEFAULT NULL, '
-                // .' `access` set(\'admin\',\'moder\',\'guest\',\'gost\',\'block\') DEFAULT NULL, '
-                . ' `access` varchar(50) DEFAULT NULL, '
-                // .' `status` set(\'new\',\'job\',\'block\',\'delete\') NOT NULL DEFAULT \'new\', '
-                . ' `status` varchar(50) NOT NULL DEFAULT \'new\', '
-                // .' `admin_status` set(\'access\',\'block\',\'blank\',\'return\') DEFAULT NULL, '
-                . ' `admin_status` varchar(250) DEFAULT NULL, '
-                . ' `dt` INTEGER, '
-                . ' `ip` varchar(20) DEFAULT NULL, '
-                . ' `city` varchar(150) DEFAULT NULL,
+
+        if ($table == 'gm_user' || empty($table)) {
+
+            if (\Nyos\nyos::$db_type == 'pg') {
+                $sql = ' CREATE TABLE "gm_user" (
+                "id" serial NOT NULL,
+                "login" text NULL,
+                "pass" text NULL,
+                "pass5" text NULL,
+                "folder" text NULL,
+                "mail" text NULL,
+                "name" text NULL,
+                "soname" text NULL,
+                "family" text NULL,
+                "phone" text NULL,
+                "avatar" text NULL,
+                "about" text NULL,
+                "soc_web" text NULL,
+                "soc_web_link" text NULL,
+                "soc_web_id" text NULL,
+                "access" text NULL,
+                "status" text NOT NULL DEFAULT \'show\',
+                "dt" text NULL,
+                "ip" text NULL,
+                "city" text NULL,
+                "city_name" text NULL,
+                "points" text NULL,
+                "country" text NULL,
+                "recovery" text NULL,
+                "recovery_dt" timestamp NULL
+                ); ';
+                $ff2 = $db->prepare($sql);
+                $ff2->execute();
+            } else {
+
+                $ff2 = $db->prepare('CREATE TABLE IF NOT EXISTS `gm_user` ( '
+                        // наверное в MySQL .' `id` int NOT NULL AUTO_INCREMENT, '
+                        // в SQLlite
+                        . ' `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL , '
+                        . ' `login` varchar(150) DEFAULT NULL, '
+                        . ' `pass` varchar(100) DEFAULT NULL, '
+                        . ' `pass5` varchar(40) DEFAULT NULL, '
+                        . ' `folder` varchar(150) DEFAULT NULL, '
+                        . ' `mail` varchar(150) DEFAULT NULL, '
+                        . ' `mail_confirm` varchar(150) DEFAULT NULL, '
+                        . ' `name` varchar(150) DEFAULT NULL, '
+                        . ' `soname` varchar(150) DEFAULT NULL, '
+                        . ' `family` varchar(150) DEFAULT NULL, '
+                        . ' `phone` varchar(20) DEFAULT NULL, '
+                        . ' `avatar` varchar(250) DEFAULT NULL, '
+                        . ' `adres` varchar(250) DEFAULT NULL, '
+                        . ' `about` TEXT, '
+                        . ' `soc_web` varchar(50) DEFAULT NULL, '
+                        . ' `soc_web_link` varchar(250) DEFAULT NULL, '
+                        . ' `soc_web_id` varchar(250) DEFAULT NULL, '
+                        // .' `access` set(\'admin\',\'moder\',\'guest\',\'gost\',\'block\') DEFAULT NULL, '
+                        . ' `access` varchar(50) DEFAULT NULL, '
+                        // .' `status` set(\'new\',\'job\',\'block\',\'delete\') NOT NULL DEFAULT \'new\', '
+                        . ' `status` varchar(50) NOT NULL DEFAULT \'new\', '
+                        // .' `admin_status` set(\'access\',\'block\',\'blank\',\'return\') DEFAULT NULL, '
+                        . ' `admin_status` varchar(250) DEFAULT NULL, '
+                        . ' `dt` INTEGER, '
+                        . ' `ip` varchar(20) DEFAULT NULL, '
+                        . ' `city` varchar(150) DEFAULT NULL,
                         `city_name` varchar(150) DEFAULT NULL,
                         `points` int(11) NOT NULL DEFAULT \'0\',
                         `country` varchar(150) DEFAULT NULL,
                         `recovery` varchar(50) DEFAULT NULL,
                         `recovery_dt` timestamp NULL DEFAULT NULL
                       ) ;');
-        //$ff->execute([$domain]);
-        $ff2->execute();
+                //$ff->execute([$domain]);
+                $ff2->execute();
+            }
+        }
 
-//CREATE TABLE IF NOT EXISTS `gm_user_option` (
+        
+        if ($table == 'gm_user_option' || empty($table)) {
+            
+//CREATE TABLE IF NOT EXISTS `` (
 //  `id` int(7) NOT NULL,
 //  `user` int(7) NOT NULL,
 //  `project` int(5) DEFAULT NULL,
@@ -351,7 +460,23 @@ class Lk {
 //  `val5` varchar(150) DEFAULT NULL
 //) ENGINE=InnoDB DEFAULT CHARSET=utf8 AVG_ROW_LENGTH=712 ROW_FORMAT=DYNAMIC COMMENT='опции пользователей';
 
-        $ff2 = $db->prepare('CREATE TABLE IF NOT EXISTS `gm_user_option` ( 
+        if (\Nyos\nyos::$db_type == 'pg') {
+            $sql = 'CREATE TABLE "gm_user_option" (
+                "id" serial NOT NULL,
+                "user" numeric NOT NULL,
+                "project" numeric NOT NULL,
+                "option" text NULL,
+                "value" text NULL,
+                "val1" text NULL,
+                "val2" text NULL,
+                "val3"  text NULL,
+                "val4"  text NULL,
+                "val5"  text NULL
+                );';
+            $ff2 = $db->prepare($sql);
+            $ff2->execute();
+        } else {
+            $ff2 = $db->prepare('CREATE TABLE IF NOT EXISTS `gm_user_option` ( 
             `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL , 
             `user` int(7) NOT NULL, 
             `project` int(7) NOT NULL, 
@@ -363,8 +488,9 @@ class Lk {
             `val4` varchar(150) DEFAULT NULL, 
             `val5` varchar(150) DEFAULT NULL
              ) ;');
-        $ff2->execute();
-
+            $ff2->execute();
+        }
+        }
 //CREATE TABLE `gm_user_di_mod` (
 //  `id` int(11) NOT NULL,
 //  `user_id` int(5) NOT NULL,
@@ -374,15 +500,30 @@ class Lk {
 //  `mode` set('site','didrive') NOT NULL
 //) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='доступ к модулям';
 
-        $ff2 = $db->prepare('CREATE TABLE IF NOT EXISTS `gm_user_di_mod` ( 
-            `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL , 
-            `user_id` int(7) NOT NULL, 
-            `folder` VARCHAR(100) NOT NULL, 
-            `module` VARCHAR(100) NOT NULL, 
-            `status` VARCHAR(20) NOT NULL DEFAULT \'yes\', 
-            `mode` VARCHAR(10) NOT NULL 
-             ) ;');
+        if ($table == 'gm_user_di_mod' || empty($table)) {
+        
+        if (\Nyos\nyos::$db_type == 'pg') {
+            $sql = 'CREATE TABLE "gm_user_di_mod" (
+                "id" serial NOT NULL,
+                "user_id" numeric NOT NULL,
+                "folder" text NULL,
+                "module" text NULL,
+                "status" text NOT NULL DEFAULT \'yes\',
+                "mode" text NULL
+                );';
+        } else {
+            $sql = 'CREATE TABLE IF NOT EXISTS `gm_user_di_mod` ( 
+                `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL , 
+                `user_id` int(7) NOT NULL, 
+                `folder` VARCHAR(100) NOT NULL, 
+                `module` VARCHAR(100) NOT NULL, 
+                `status` VARCHAR(20) NOT NULL DEFAULT \'yes\', 
+                `mode` VARCHAR(10) NOT NULL 
+                 ) ;';
+        }
+        $ff2 = $db->prepare($sql);
         $ff2->execute();
+    }
     }
 
     /**
@@ -428,7 +569,7 @@ class Lk {
 
         //\f\pa($result);
         // если пользователя нет, создаём такого
-        if ($result !== false) {
+        if (isset($result) && $result !== false) {
             return $result;
         } else {
             // Добавление пользователя
@@ -440,29 +581,48 @@ class Lk {
 
     public static function enterVk($db, string $soc_id) {
 
-        $in = [
-            ':soc_id' => $soc_id,
-        ];
+        try {
 
-        if (empty($folder)) {
-            $in[':folder'] = \Nyos\Nyos::$folder_now;
+            $in = [
+                ':soc_id' => $soc_id,
+            ];
 
-            // \f\pa($_SERVER);
-            if (strpos($_SERVER['PHP_SELF'], 'didrive') !== false) {
-                $in[':folder'] .= '_di';
+
+            if (\Nyos\nyos::$db_type == 'pg') {
+                $sql = 'SELECT * FROM "gm_user" WHERE soc_web_id = :soc_id LIMIT 1;';
+                // $sql = 'SELECT * FROM "gm_user" WHERE folder = :folder AND soc_web_id = :soc_id LIMIT 1;';
+            } else {
+                $sql = 'SELECT * FROM `gm_user` WHERE folder = :folder AND soc_web_id = :soc_id LIMIT 1;';
+                if (empty($folder)) {
+                    $in[':folder'] = \Nyos\Nyos::$folder_now;
+
+                    // \f\pa($_SERVER);
+                    if (strpos($_SERVER['PHP_SELF'], 'didrive') !== false) {
+                        $in[':folder'] .= '_di';
+                    }
+                }
+            }
+
+            // \f\pa($sql);
+            $ff = $db->prepare($sql);
+            // \f\pa($in);
+            $ff->execute($in);
+            $re = $ff->fetch();
+            // \f\pa($re);
+
+            return $re ?? false;
+        } catch (\PDOException $exc) {
+
+            // echo $exc->getTraceAsString();
+
+            if (strpos($exc->getMessage(), 'does not exist') !== false) {
+                self::creatTable($db);
+
+                \f\redirect('/', ( \Nyos\mod\Lk::$type == 'now_user_di' ? 'i.didrive.php' : 'index.php'), ['warn' => 'первый вход, создали вашу учётную запись']);
+
+                // return false;
             }
         }
-
-        $sql = 'SELECT * FROM `gm_user` WHERE folder = :folder AND soc_web_id = :soc_id LIMIT 1;';
-        // \f\pa($sql);
-        $ff = $db->prepare($sql);
-        // \f\pa($in);
-        $ff->execute($in);
-        $re = $ff->fetch();
-        // \f\pa($re);
-        
-        return $re ?? false;
-
     }
 
     /**
@@ -590,14 +750,12 @@ class Lk {
             $data['family'] = $data['last_name'];
 
         if (isset($data['profile']))
-            $data[
-                    'soc_web_link'] = $data['profile'];
+            $data['soc_web_link'] = $data['profile'];
 
         if (isset($data['uid']))
-            $data[
-                    'soc_web_id'] = $data['uid'];
+            $data['soc_web_id'] = $data['uid'];
 
-        if (isset($folder{1}))
+        if (!empty($folder))
             $data['folder'] = $folder;
 
         //$indb['dt'] = 'NOW';
