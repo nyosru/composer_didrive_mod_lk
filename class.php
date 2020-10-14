@@ -453,11 +453,12 @@ class Lk {
             }
         }
 
-        $sql = 'SELECT * FROM gm_user WHERE folder = :folder AND soc_web_id = :soc_id LIMIT 1;';
+        $sql = 'SELECT * FROM gm_user WHERE folder = :folder AND soc_web_id = :soc_id AND status != \'delete\' LIMIT 1;';
         // \f\pa($sql);
         $ff = $db->prepare($sql);
         // \f\pa($in);
         $ff->execute($in);
+        
         $re = $ff->fetch();
         // \f\pa($re);
         
