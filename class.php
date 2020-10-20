@@ -151,6 +151,8 @@ class Lk {
      * @return boolean
      */
     public static function getUsers($db, string $folder = null, string $type = null, string $status = null) {
+    
+        // \f\pa( [ $folder , $type , $status ] );
 
         $where = '';
         $sf = [];
@@ -179,14 +181,17 @@ class Lk {
             //$ff->execute(array(':domain' => $domain));
             //$sf[':domain'] = $_SERVER['HTTP_HOST'];
             $ff->execute($sf);
+            
         } catch (Exception $ex) {
             
         }
 
         $dop_sql = '';
+        $dop_sql_id = '';
 
         while ($r = $ff->fetch()) {
             $dop_sql .= ( isset($dop_sql{2}) ? ' OR ' : '' ) . ' `user` = \'' . $r['id'] . '\' ';
+            $dop_sql_id .= ( isset($dop_sql_id{2}) ? ' OR ' : '' ) . ' `user_id` = \'' . $r['id'] . '\' ';
             $res[$r['id']] = $r;
         }
 
@@ -203,34 +208,72 @@ class Lk {
             $res[$r['user']]['dops'][$r['option']] = $r['value'];
         }
 
+//        try {
+//
+//
+//            $ff1 = $db->prepare('SELECT access, var1, var2, user, module FROM gm_user_access WHERE ( ' . $dop_sql . ' ) AND status = \'ok\' ;');
+//            $ff1->execute();
+//
+//            while ($r = $ff1->fetch()) {
+//                if (!isset($res[$r['user']]['access_mod']))
+//                    $res[$r['user']]['access_mod'] = array();
+//
+//                $res[$r['user']]['access_mod'][$r['module']][$r['var1']] = $r;
+//            }
+//            
+//        } catch (\PDOException $ex) {
+//
+//            if (strpos($ex->getMessage(), 'no such table') !== false) {
+//
+//                $ff12 = $db->prepare('CREATE TABLE gm_user_access (
+//                `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+//                `folder` VARCHAR (50),
+//                `module` VARCHAR (50),
+//                `var1` VARCHAR (150),
+//                `var2` VARCHAR (150),
+//                `user` int(11) NOT NULL REFERENCES gm_user (id),
+//                `access` VARCHAR,
+//                `status` VARCHAR,
+//                `d` INTEGER NOT NULL,
+//                `t` INTEGER NOT NULL
+//            );');
+//                $ff12->execute();
+//            }
+//        }
+
+
         try {
 
 
-            $ff1 = $db->prepare('SELECT access, var1, var2, user, module FROM gm_user_access WHERE ( ' . $dop_sql . ' ) AND status = \'ok\' ;');
+            $ff1 = $db->prepare('SELECT user_id user, folder, module, mode FROM gm_user_di_mod WHERE ( ' . $dop_sql_id . ' ) AND status = \'yes\' ;');
             $ff1->execute();
 
             while ($r = $ff1->fetch()) {
+                
                 if (!isset($res[$r['user']]['access_mod']))
                     $res[$r['user']]['access_mod'] = array();
 
-                $res[$r['user']]['access_mod'][$r['module']][$r['var1']] = $r;
+                $res[$r['user']]['access_mod'][$r['module']] = $r['mode'];
             }
-        } catch (\PDOException $ex) {
+            
+        } 
+        //
+        catch (\PDOException $ex) {
 
             if (strpos($ex->getMessage(), 'no such table') !== false) {
 
-                $ff12 = $db->prepare('CREATE TABLE gm_user_access (
-                `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-                `folder` VARCHAR (50),
-                `module` VARCHAR (50),
-                `var1` VARCHAR (150),
-                `var2` VARCHAR (150),
-                `user` int(11) NOT NULL REFERENCES gm_user (id),
-                `access` VARCHAR,
-                `status` VARCHAR,
-                `d` INTEGER NOT NULL,
-                `t` INTEGER NOT NULL
-            );');
+                $ff12 = $db->prepare('CREATE TABLE `gm_user_di_mod` (
+                    `id` int(11) NOT NULL,
+                    `user_id` int(7) NOT NULL,
+                    `folder` varchar(100) NOT NULL,
+                    `module` varchar(100) NOT NULL,
+                    `status` varchar(20) NOT NULL DEFAULT \'yes\',
+                    `mode` varchar(10) NOT NULL
+                  ) ENGINE=InnoDB DEFAULT CHARSET=utf8;');
+                $ff12->execute();
+                $ff12 = $db->prepare('ALTER TABLE `gm_user_di_mod` ADD PRIMARY KEY (`id`);');
+                $ff12->execute();
+                $ff12 = $db->prepare('ALTER TABLE `gm_user_di_mod` MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;');
                 $ff12->execute();
             }
         }
