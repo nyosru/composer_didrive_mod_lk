@@ -289,16 +289,16 @@ class Lk {
     }
 
     public static function getUser($db, $id, $login = null, $pass = null, $folder = null) {
-
+        
         //echo '<br/>'.$id;
         //die;
 
         $s = 'SELECT * FROM `gm_user` as `u` WHERE '
                 . ' u.status != \'delete\' '
                 . (!empty($id) ? ' AND ( `soc_web_id` = :id  OR `id` = :id ) ' : '' )
-                . (!empty($folder{1}) ? ' AND `folder` = :folder ' : '' )
-                . (!empty($login{1}) ? ' AND u.login = :login ' : '' )
-                . (!empty($pass{1}) ? ' AND u.pass5 = :pass ' : '' )
+                . (!empty($folder) ? ' AND `folder` = :folder ' : '' )
+                . (!empty($login) ? ' AND u.login = :login ' : '' )
+                . (!empty($pass) ? ' AND u.pass5 = :pass ' : '' )
                 . ' LIMIT 1 ;';
 
         //echo '<br/>' . $s;
@@ -307,13 +307,13 @@ class Lk {
         $sql = $db->prepare($s);
         $dop_ar = [];
 
-        if (!empty($login{1}))
+        if (!empty($login))
             $dop_ar[':login'] = $login;
 
-        if (!empty($pass{1}))
+        if (!empty($pass))
             $dop_ar[':pass'] = md5($pass);
 
-        if (!empty($folder{1}))
+        if (!empty($folder))
             $dop_ar[':folder'] = (string) $folder;
 
         if (!empty($id))
@@ -326,8 +326,9 @@ class Lk {
 
         if ($user = $sql->fetch()) {
 
-            // \f\pa($user);
+            \f\pa($user,2,'','ueser');
             return $user;
+            
         } else {
 
             // \f\pa($user);
@@ -343,44 +344,48 @@ class Lk {
 
     public static function creatTable($db) {
 
-        $ff2 = $db->prepare('CREATE TABLE IF NOT EXISTS `gm_user` ( '
-                // наверное в MySQL .' `id` int NOT NULL AUTO_INCREMENT, '
-                // в SQLlite
-                . ' `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL , '
-                . ' `login` varchar(150) DEFAULT NULL, '
-                . ' `pass` varchar(100) DEFAULT NULL, '
-                . ' `pass5` varchar(40) DEFAULT NULL, '
-                . ' `folder` varchar(150) DEFAULT NULL, '
-                . ' `mail` varchar(150) DEFAULT NULL, '
-                . ' `mail_confirm` varchar(150) DEFAULT NULL, '
-                . ' `name` varchar(150) DEFAULT NULL, '
-                . ' `soname` varchar(150) DEFAULT NULL, '
-                . ' `family` varchar(150) DEFAULT NULL, '
-                . ' `phone` varchar(20) DEFAULT NULL, '
-                . ' `avatar` varchar(250) DEFAULT NULL, '
-                . ' `adres` varchar(250) DEFAULT NULL, '
-                . ' `about` TEXT, '
-                . ' `soc_web` varchar(50) DEFAULT NULL, '
-                . ' `soc_web_link` varchar(250) DEFAULT NULL, '
-                . ' `soc_web_id` varchar(250) DEFAULT NULL, '
-                // .' `access` set(\'admin\',\'moder\',\'guest\',\'gost\',\'block\') DEFAULT NULL, '
-                . ' `access` varchar(50) DEFAULT NULL, '
-                // .' `status` set(\'new\',\'job\',\'block\',\'delete\') NOT NULL DEFAULT \'new\', '
-                . ' `status` varchar(50) NOT NULL DEFAULT \'new\', '
-                // .' `admin_status` set(\'access\',\'block\',\'blank\',\'return\') DEFAULT NULL, '
-                . ' `admin_status` varchar(250) DEFAULT NULL, '
-                . ' `dt` INTEGER, '
-                . ' `ip` varchar(20) DEFAULT NULL, '
-                . ' `city` varchar(150) DEFAULT NULL,
-                        `city_name` varchar(150) DEFAULT NULL,
-                        `points` int(11) NOT NULL DEFAULT \'0\',
-                        `country` varchar(150) DEFAULT NULL,
-                        `recovery` varchar(50) DEFAULT NULL,
-                        `recovery_dt` timestamp NULL DEFAULT NULL
-                      ) ;');
-        //$ff->execute([$domain]);
-        $ff2->execute();
+        $ff2 = $db->prepare('CREATE TABLE `gm_user` (
+  `id` int(11) NOT NULL,
+  `login` varchar(150) DEFAULT NULL,
+  `pass` varchar(100) DEFAULT NULL,
+  `pass5` varchar(40) DEFAULT NULL,
+  `folder` varchar(150) DEFAULT NULL,
+  `mail` varchar(150) DEFAULT NULL,
+  `mail_confirm` varchar(150) DEFAULT NULL,
+  `name` varchar(150) DEFAULT NULL,
+  `soname` varchar(150) DEFAULT NULL,
+  `family` varchar(150) DEFAULT NULL,
+  `phone` varchar(20) DEFAULT NULL,
+  `avatar` varchar(250) DEFAULT NULL,
+  `adres` varchar(250) DEFAULT NULL,
+  `about` text,
+  `soc_web` varchar(50) DEFAULT NULL,
+  `soc_web_link` varchar(250) DEFAULT NULL,
+  `soc_web_id` varchar(250) DEFAULT NULL,
+  `access` varchar(50) DEFAULT NULL,
+  `status` varchar(50) NOT NULL DEFAULT \'new\',
+  `admin_status` varchar(250) DEFAULT NULL,
+  `dt` int(11) DEFAULT NULL,
+  `ip` varchar(20) DEFAULT NULL,
+  `city` varchar(150) DEFAULT NULL,
+  `city_name` varchar(150) DEFAULT NULL,
+  `points` int(11) NOT NULL DEFAULT \'0\',
+  `country` varchar(150) DEFAULT NULL,
+  `recovery` varchar(50) DEFAULT NULL,
+  `recovery_dt` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;');
+$ff2->execute();
 
+$ff2 = $db->prepare('ALTER TABLE `gm_user`
+  ADD PRIMARY KEY (`id`);');
+$ff2->execute();
+
+$ff2 = $db->prepare('ALTER TABLE `gm_user`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;');
+$ff2->execute();
+
+        
+        
 //CREATE TABLE IF NOT EXISTS `gm_user_option` (
 //  `id` int(7) NOT NULL,
 //  `user` int(7) NOT NULL,
@@ -394,18 +399,19 @@ class Lk {
 //  `val5` varchar(150) DEFAULT NULL
 //) ENGINE=InnoDB DEFAULT CHARSET=utf8 AVG_ROW_LENGTH=712 ROW_FORMAT=DYNAMIC COMMENT='опции пользователей';
 
-        $ff2 = $db->prepare('CREATE TABLE IF NOT EXISTS `gm_user_option` ( 
-            `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL , 
-            `user` int(7) NOT NULL, 
-            `project` int(7) NOT NULL, 
-            `option` varchar(50) DEFAULT NULL, 
-            `value` varchar(250) DEFAULT NULL, 
-            `val1` varchar(150) DEFAULT NULL, 
-            `val2` varchar(150) DEFAULT NULL, 
-            `val3` varchar(150) DEFAULT NULL, 
-            `val4` varchar(150) DEFAULT NULL, 
-            `val5` varchar(150) DEFAULT NULL
-             ) ;');
+        $ff2 = $db->prepare('CREATE TABLE IF NOT EXISTS `gm_user_option` (
+            `id` int(11) NOT NULL AUTO_INCREMENT,
+            `user` int(7) NOT NULL,
+            `project` int(7) NOT NULL,
+            `option` varchar(50) DEFAULT NULL,
+            `value` varchar(250) DEFAULT NULL,
+            `val1` varchar(150) DEFAULT NULL,
+            `val2` varchar(150) DEFAULT NULL,
+            `val3` varchar(150) DEFAULT NULL,
+            `val4` varchar(150) DEFAULT NULL,
+            `val5` varchar(150) DEFAULT NULL,
+            PRIMARY KEY (`id`)
+          ) ENGINE=InnoDB DEFAULT CHARSET=utf8;');
         $ff2->execute();
 
 //CREATE TABLE `gm_user_di_mod` (
@@ -417,14 +423,15 @@ class Lk {
 //  `mode` set('site','didrive') NOT NULL
 //) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='доступ к модулям';
 
-        $ff2 = $db->prepare('CREATE TABLE IF NOT EXISTS `gm_user_di_mod` ( 
-            `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL , 
-            `user_id` int(7) NOT NULL, 
-            `folder` VARCHAR(100) NOT NULL, 
-            `module` VARCHAR(100) NOT NULL, 
-            `status` VARCHAR(20) NOT NULL DEFAULT \'yes\', 
-            `mode` VARCHAR(10) NOT NULL 
-             ) ;');
+        $ff2 = $db->prepare('CREATE TABLE IF NOT EXISTS `gm_user_di_mod` (
+            `id` int(11) NOT NULL AUTO_INCREMENT,
+            `user_id` int(7) NOT NULL,
+            `folder` varchar(100) NOT NULL,
+            `module` varchar(100) NOT NULL,
+            `status` varchar(20) NOT NULL DEFAULT \'yes\',
+            `mode` varchar(10) NOT NULL,
+            PRIMARY KEY (`id`)
+          ) ENGINE=InnoDB DEFAULT CHARSET=utf8;');
         $ff2->execute();
     }
 
@@ -447,11 +454,13 @@ class Lk {
             if (isset($user['error'])) {
                 throw new \Exception('Ошибка при получении информации о токене: ' . $user['error']);
             }
-            //\f\pa($user, 2, null, 'получили данные пользователя #' . __LINE__);
+            \f\pa($user, 2, null, 'получили данные пользователя #' . __LINE__);
+            
         } catch (\Error $ex) {
-            throw new \NyosEx('Ошибка при получении информации токена: ' . $ex->getMessage());
+            // throw new \NyosEx('Ошибка при получении информации токена: ' . $ex->getMessage());
         } catch (\Exception $ex) {
-            throw new \NyosEx('Ошибка при получении информации токена: ' . $ex->getMessage());
+            // throw new \NyosEx('Ошибка при получении информации токена: ' . $ex->getMessage());
+            \f\pa($ex,2,'', __FUNCTION__ . ' ex');
         }
 
         if ($type == 'didrive')
@@ -460,6 +469,8 @@ class Lk {
         try {
 
             $result = self::getUser($db, $user['uid'], null, null, $folder);
+            \f\pa($result,2,'','result');
+            
         } catch (\PDOException $ex) {
 
             if (strpos($ex->getMessage(), 'no such table') !== false) {
@@ -471,7 +482,7 @@ class Lk {
 
         //\f\pa($result);
         // если пользователя нет, создаём такого
-        if ($result !== false) {
+        if ( isset($result) && $result !== false) {
             return $result;
         } else {
             // Добавление пользователя
