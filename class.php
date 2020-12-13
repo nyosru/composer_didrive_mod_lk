@@ -28,18 +28,18 @@ class Lk {
     // public static $type = 'now_user_di';
     public static $user_di_access = array();
     public static $dop = array();
+
     /**
      * поля в базе сотрудников
      * @var type 
      */
     public static $polya_db = [
-        'login','pass','pass5','folder','mail',
-        'mail_confirm','name','soname','family',
-        'phone','avatar','adres','about',
-        'soc_web','soc_web_link',
-        'soc_web_id','access','status','admin_status','dt','ip'
-        ,'city','city_name','points','country','recovery','recovery_dt'
-                    
+        'login', 'pass', 'pass5', 'folder', 'mail',
+        'mail_confirm', 'name', 'soname', 'family',
+        'phone', 'avatar', 'adres', 'about',
+        'soc_web', 'soc_web_link',
+        'soc_web_id', 'access', 'status', 'admin_status', 'dt', 'ip'
+        , 'city', 'city_name', 'points', 'country', 'recovery', 'recovery_dt'
     ];
     public static $access_di_site = array(
         'admin' => array(
@@ -151,7 +151,7 @@ class Lk {
      * @return boolean
      */
     public static function getUsers($db, string $folder = null, string $type = null, string $status = null) {
-    
+
         // \f\pa( [ $folder , $type , $status ] );
 
         $where = '';
@@ -181,7 +181,6 @@ class Lk {
             //$ff->execute(array(':domain' => $domain));
             //$sf[':domain'] = $_SERVER['HTTP_HOST'];
             $ff->execute($sf);
-            
         } catch (Exception $ex) {
             
         }
@@ -249,14 +248,13 @@ class Lk {
             $ff1->execute();
 
             while ($r = $ff1->fetch()) {
-                
+
                 if (!isset($res[$r['user']]['access_mod']))
                     $res[$r['user']]['access_mod'] = array();
 
                 $res[$r['user']]['access_mod'][$r['module']] = $r['mode'];
             }
-            
-        } 
+        }
         //
         catch (\PDOException $ex) {
 
@@ -289,7 +287,7 @@ class Lk {
     }
 
     public static function getUser($db, $id, $login = null, $pass = null, $folder = null) {
-        
+
         //echo '<br/>'.$id;
         //die;
 
@@ -326,9 +324,8 @@ class Lk {
 
         if ($user = $sql->fetch()) {
 
-            \f\pa($user,2,'','ueser');
+            \f\pa($user, 2, '', 'ueser');
             return $user;
-            
         } else {
 
             // \f\pa($user);
@@ -374,18 +371,18 @@ class Lk {
   `recovery` varchar(50) DEFAULT NULL,
   `recovery_dt` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;');
-$ff2->execute();
+        $ff2->execute();
 
-$ff2 = $db->prepare('ALTER TABLE `gm_user`
+        $ff2 = $db->prepare('ALTER TABLE `gm_user`
   ADD PRIMARY KEY (`id`);');
-$ff2->execute();
+        $ff2->execute();
 
-$ff2 = $db->prepare('ALTER TABLE `gm_user`
+        $ff2 = $db->prepare('ALTER TABLE `gm_user`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;');
-$ff2->execute();
+        $ff2->execute();
 
-        
-        
+
+
 //CREATE TABLE IF NOT EXISTS `gm_user_option` (
 //  `id` int(7) NOT NULL,
 //  `user` int(7) NOT NULL,
@@ -455,12 +452,11 @@ $ff2->execute();
                 throw new \Exception('Ошибка при получении информации о токене: ' . $user['error']);
             }
             \f\pa($user, 2, null, 'получили данные пользователя #' . __LINE__);
-            
         } catch (\Error $ex) {
             // throw new \NyosEx('Ошибка при получении информации токена: ' . $ex->getMessage());
         } catch (\Exception $ex) {
             // throw new \NyosEx('Ошибка при получении информации токена: ' . $ex->getMessage());
-            \f\pa($ex,2,'', __FUNCTION__ . ' ex');
+            \f\pa($ex, 2, '', __FUNCTION__ . ' ex');
         }
 
         if ($type == 'didrive')
@@ -469,8 +465,7 @@ $ff2->execute();
         try {
 
             $result = self::getUser($db, $user['uid'], null, null, $folder);
-            \f\pa($result,2,'','result');
-            
+            \f\pa($result, 2, '', 'result');
         } catch (\PDOException $ex) {
 
             if (strpos($ex->getMessage(), 'no such table') !== false) {
@@ -482,7 +477,7 @@ $ff2->execute();
 
         //\f\pa($result);
         // если пользователя нет, создаём такого
-        if ( isset($result) && $result !== false) {
+        if (isset($result) && $result !== false) {
             return $result;
         } else {
             // Добавление пользователя
@@ -507,17 +502,28 @@ $ff2->execute();
             }
         }
 
-        $sql = 'SELECT * FROM gm_user WHERE folder = :folder AND soc_web_id = :soc_id AND status != \'delete\' LIMIT 1;';
-        // \f\pa($sql);
-        $ff = $db->prepare($sql);
-        // \f\pa($in);
-        $ff->execute($in);
-        
-        $re = $ff->fetch();
-        // \f\pa($re);
-        
-        return $re ?? false;
+        try {
 
+            $sql = 'SELECT * FROM gm_user WHERE folder = :folder AND soc_web_id = :soc_id AND status != \'delete\' LIMIT 1;';
+            // \f\pa($sql);
+            $ff = $db->prepare($sql);
+            // \f\pa($in);
+            $ff->execute($in);
+
+            $re = $ff->fetch();
+            // \f\pa($re);
+        } catch (\Exception $ex) {
+            // echo $ex->getTraceAsString();
+
+            if (strpos($ex->getMessage(), 'table') !== false && strpos($ex->getMessage(), 'doesn\'t exist') !== false) {
+
+                self::creatTable($db);
+                throw new \Exception('Обновите страницу и заходите, созданы базы данных для пользователей');
+            }
+        }
+
+
+        return $re ?? false;
     }
 
     /**
